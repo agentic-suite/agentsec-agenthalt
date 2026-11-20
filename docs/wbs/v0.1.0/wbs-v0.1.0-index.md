@@ -75,24 +75,23 @@ A milestone is **closed** only when all of these hold:
 
 ## Issues & milestones (GitHub)
 
-**To be created.** Every work item ships as a **GitHub issue** under milestone `0.1.0 — M<n> <name>`
-(labels `0.1.0`, `wbs`). Body standard: Why · Behavior/What · How · Data & schema impact · Security & privacy ·
-Edge cases · Testing · Risks & mitigations · Acceptance criteria · Dependencies · References · Definition of
-done; marker `<!-- wbs:<item_id> -->`. **The `Issue` column in each part file holds the live number.** The two
-process items per milestone (`.CI` commit, `.W` WBS checkpoint) are tracked here, not as issues.
+Every work item ships as a **GitHub issue** under milestone `0.1.0 — M<n> <name>` (labels `0.1.0`, `wbs`). Body
+standard: Context · Why · What · How · Data & schema impact · Security & privacy · Edge cases · Testing · Risks &
+mitigations · Acceptance criteria · Dependencies · References · Definition of done; marker
+`<!-- wbs:<item> -->`. **The `Issue` column in each part file holds the live number.** The two process items per
+milestone (`.CI` commit, `.W` WBS checkpoint) are tracked here, not as issues.
 
-**14 milestones · 169 issues** (`agentic-suite/agentsec-agenthalt`; issues start at **#5** — #1–#4 are the
-existing repo PRs).
+**14 milestones · 169 issues** (`agentic-suite/agentsec-agenthalt`).
 
 | M | Milestone | Issues | M | Milestone | Issues |
 |---|---|---|---|---|---|
-| M0 | Foundation, CLI & halt journal | #5–#17 | M7 | Triggers, halt events & journal integration | #90–#101 |
-| M1 | Halt store, dual choke & fail-closed | #18–#29 | M8 | Zero-hook-surface containment & hostile-harness | #102–#112 |
-| M2 | Lineage registry & subtree resolution | #30–#41 | M9 | Pause/resume & the mode engine | #113–#124 |
-| M3 | Process-tree containment (executor core) | #42–#53 | M10 | Drill runner, catalogue & CI chaos gate | #125–#136 |
-| M4 | Credential, gateway & sandbox executors | #54–#65 | M11 | NFRs, hardening, observability & claims | #137–#149 |
-| M5 | Evidence snapshot & hash chain | #66–#77 | M12 | Field tests | #150–#161 |
-| M6 | Receipt, proof-of-stop & readout | #78–#89 | M13 | Release readiness | #162–#173 |
+| M0 | Foundation, CLI & halt journal | #399–#411 | M7 | Triggers, halt events & journal integration | #484–#495 |
+| M1 | Halt store, dual choke & fail-closed | #412–#423 | M8 | Zero-hook-surface containment & hostile-harness | #496–#506 |
+| M2 | Lineage registry & subtree resolution | #424–#435 | M9 | Pause/resume & the mode engine | #507–#518 |
+| M3 | Process-tree containment (executor core) | #436–#447 | M10 | Drill runner, catalogue & CI chaos gate | #519–#530 |
+| M4 | Credential, gateway & sandbox executors | #448–#459 | M11 | NFRs, hardening, observability & claims | #531–#543 |
+| M5 | Evidence snapshot & hash chain | #460–#471 | M12 | Field tests | #544–#555 |
+| M6 | Receipt, proof-of-stop & readout | #472–#483 | M13 | Release readiness | #556–#567 |
 
 ## Progress
 

@@ -27,18 +27,18 @@ R11, R13**; [PRD 11](../../prd/11-decisions.md) DD-04/11; ADR-0003.
 
 | # | Task | Description | Deliverable | Acceptance | Issue | CUJ | Req |
 |---|---|---|---|---|---|---|---|
-| 6.D0 | **Design docs first** | Receipt schema v1, status vocabulary, readout fields, compensation model, verifier semantics | docs | reviewed before code | #78 | — | — |
-| 6.1 | **Receipt builder** | Assemble from **confirmations only**; fields per [PRD 26](../../prd/26-receipt-schema-and-examples.md); trigger/subtree/confirmations/refused-calls/evidence | builder | a `requested` never appears as a stop | #79 | CUJ-9 | R10 |
-| 6.2 | Status vocabulary + survivors invariant | `complete`/`incomplete`/`partial-layer`/`failed`; non-empty `survivors[]` **forces** `incomplete` | invariant | survivor ⇒ incomplete (schema-enforced) | #80 | CUJ-9 | R10 |
-| 6.3 | **Readout builder** | Unrevocable grants + residual windows, queued work, siblings, downstream agents, uncovered routes | readout | every residual named with its window | #81 | CUJ-10 | R11 |
-| 6.4 | **Compensation-list builder** | Already-landed side effects (kind/ref/`reversible:false`); never offers reversal | compensation | landed effects listed; no undo claim | #82 | CUJ-17 | R13 |
-| 6.5 | **Offline verifier** (`prove`) | Re-derive receipt hash, verify confirmation signatures, cross-check evidence chain; emits `VERIFIED (…)`/`TAMPERED` | CLI | third party verifies without agenthalt installed | #83 | CUJ-9 | R10 |
-| 6.6 | Receipt one-liner + `--json` | Human one-liner + full `--json` (the same object `prove` verifies); exit-code tie-in (0/1/2) | CLI output | one-liner accurate; `--json` matches schema | #84 | CUJ-10 | R11 |
-| 6.T | Tests | Receipt assembly, survivors invariant, readout fields, compensation, `prove` (golden + tamper), output modes | tests | all new paths covered; coverage ≥ 95% | #85 | — | — |
-| 6.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #86 | — | — |
-| 6.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #87 | — | — |
-| 6.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #88 | — | — |
-| 6.D | Docs | Receipt reference, status vocabulary, readout, offline verification | docs | docs updated + linked here | #89 | — | — |
+| 6.D0 | **Design docs first** | Receipt schema v1, status vocabulary, readout fields, compensation model, verifier semantics | docs | reviewed before code | #472 | — | — |
+| 6.1 | **Receipt builder** | Assemble from **confirmations only**; fields per [PRD 26](../../prd/26-receipt-schema-and-examples.md); trigger/subtree/confirmations/refused-calls/evidence | builder | a `requested` never appears as a stop | #473 | CUJ-9 | R10 |
+| 6.2 | Status vocabulary + survivors invariant | `complete`/`incomplete`/`partial-layer`/`failed`; non-empty `survivors[]` **forces** `incomplete` | invariant | survivor ⇒ incomplete (schema-enforced) | #474 | CUJ-9 | R10 |
+| 6.3 | **Readout builder** | Unrevocable grants + residual windows, queued work, siblings, downstream agents, uncovered routes | readout | every residual named with its window | #475 | CUJ-10 | R11 |
+| 6.4 | **Compensation-list builder** | Already-landed side effects (kind/ref/`reversible:false`); never offers reversal | compensation | landed effects listed; no undo claim | #476 | CUJ-17 | R13 |
+| 6.5 | **Offline verifier** (`prove`) | Re-derive receipt hash, verify confirmation signatures, cross-check evidence chain; emits `VERIFIED (…)`/`TAMPERED` | CLI | third party verifies without agenthalt installed | #477 | CUJ-9 | R10 |
+| 6.6 | Receipt one-liner + `--json` | Human one-liner + full `--json` (the same object `prove` verifies); exit-code tie-in (0/1/2) | CLI output | one-liner accurate; `--json` matches schema | #478 | CUJ-10 | R11 |
+| 6.T | Tests | Receipt assembly, survivors invariant, readout fields, compensation, `prove` (golden + tamper), output modes | tests | all new paths covered; coverage ≥ 95% | #479 | — | — |
+| 6.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #480 | — | — |
+| 6.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #481 | — | — |
+| 6.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #482 | — | — |
+| 6.D | Docs | Receipt reference, status vocabulary, readout, offline verification | docs | docs updated + linked here | #483 | — | — |
 | 6.CI | Commit & push | On the feature branch | git | pushed | — | — | — |
 | 6.W | Update WBS | Checkpoint appended to the index Progress | WBS | checkpoint recorded | — | — | — |
 
@@ -67,18 +67,18 @@ pattern that keep the switch from being a DoS lever.
 
 | # | Task | Description | Deliverable | Acceptance | Issue | CUJ | Req |
 |---|---|---|---|---|---|---|---|
-| 7.D0 | **Design docs first** | Trigger catalogue (auth per path, replay windows, scope ceilings), halt-event schema, journal integration | docs | reviewed before code | #90 | — | — |
-| 7.1 | **Halt event emitter** (agentwatch) | `halt.raised`/`halt.completed`/`trigger.rejected` in the security-event schema; join on common id | emitter | SOC test alarms on a halt; events join | #91 | CUJ-14 | R6 |
-| 7.2 | CLI trigger + **panic key** | CLI halt; panic key bound to the **interactive session** (non-interactive rejected + journaled; no-op when idle) | triggers | panic key fires; non-interactive rejected | #92 | CUJ-12 | R4 |
-| 7.3 | **Alert webhook trigger** | HMAC-signed webhook, ±5 min replay window, per-source rate limit | trigger | signed accepted; replay/unsigned rejected | #93 | CUJ-11 | R4 |
-| 7.4 | PagerDuty + Slack triggers | PagerDuty button (incident-bound); Slack action (signed + principal) | triggers | both fire + journal actor/channel | #94 | CUJ-11 | R4 |
-| 7.5 | Scope ceilings + fleet confirmation | `max_scope` structural; `--all` requires typed confirmation or `--yes`; CI non-tty fleet halt ⇒ exit 4 | guardrails | scope cannot widen; fleet halt gated | #95 | CUJ-2 | R4 |
-| 7.6 | Journal integration | `journal show`/`journal verify`; trigger record written **before** resolution; every raise/execute/lift/resume journaled | CLI + journal | journal-first enforced; verify detects tamper | #96 | — | R12 |
-| 7.T | Tests | Each trigger path + auth/replay/rate-limit, scope ceilings, event emission/join, journal-first, verify | tests | all new paths covered; coverage ≥ 95% | #97 | — | — |
-| 7.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #98 | — | — |
-| 7.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #99 | — | — |
-| 7.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #100 | — | — |
-| 7.D | Docs | Trigger catalogue reference, halt-event schema binding, journal commands | docs | docs updated + linked here | #101 | — | — |
+| 7.D0 | **Design docs first** | Trigger catalogue (auth per path, replay windows, scope ceilings), halt-event schema, journal integration | docs | reviewed before code | #484 | — | — |
+| 7.1 | **Halt event emitter** (agentwatch) | `halt.raised`/`halt.completed`/`trigger.rejected` in the security-event schema; join on common id | emitter | SOC test alarms on a halt; events join | #485 | CUJ-14 | R6 |
+| 7.2 | CLI trigger + **panic key** | CLI halt; panic key bound to the **interactive session** (non-interactive rejected + journaled; no-op when idle) | triggers | panic key fires; non-interactive rejected | #486 | CUJ-12 | R4 |
+| 7.3 | **Alert webhook trigger** | HMAC-signed webhook, ±5 min replay window, per-source rate limit | trigger | signed accepted; replay/unsigned rejected | #487 | CUJ-11 | R4 |
+| 7.4 | PagerDuty + Slack triggers | PagerDuty button (incident-bound); Slack action (signed + principal) | triggers | both fire + journal actor/channel | #488 | CUJ-11 | R4 |
+| 7.5 | Scope ceilings + fleet confirmation | `max_scope` structural; `--all` requires typed confirmation or `--yes`; CI non-tty fleet halt ⇒ exit 4 | guardrails | scope cannot widen; fleet halt gated | #489 | CUJ-2 | R4 |
+| 7.6 | Journal integration | `journal show`/`journal verify`; trigger record written **before** resolution; every raise/execute/lift/resume journaled | CLI + journal | journal-first enforced; verify detects tamper | #490 | — | R12 |
+| 7.T | Tests | Each trigger path + auth/replay/rate-limit, scope ceilings, event emission/join, journal-first, verify | tests | all new paths covered; coverage ≥ 95% | #491 | — | — |
+| 7.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #492 | — | — |
+| 7.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #493 | — | — |
+| 7.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #494 | — | — |
+| 7.D | Docs | Trigger catalogue reference, halt-event schema binding, journal commands | docs | docs updated + linked here | #495 | — | — |
 | 7.CI | Commit & push | On the feature branch | git | pushed | — | — | — |
 | 7.W | Update WBS | Checkpoint appended to the index Progress | WBS | checkpoint recorded | — | — | — |
 
