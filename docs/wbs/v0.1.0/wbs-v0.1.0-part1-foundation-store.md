@@ -44,10 +44,17 @@ depend on them forever ([PRD 37](../../prd/37-cli-and-output-ux-spec.md), Tier-0
 
 **Exit criteria**
 
-- [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
-- [ ] `agenthalt --help` lists the full command surface; exit codes 0–5 reserved and documented
-- [ ] Bad config fails closed (exit 5); the journal chain verifies and detects a seeded edit
-- [ ] Exit-code precedence `3` > `1` > `2` > `0` (DD-39) tested; `run`/`attach` reserved in the CLI
+- [x] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+- [x] `agenthalt --help` lists the full command surface; exit codes 0–5 reserved and documented
+- [x] Bad config fails closed (exit 5); the journal chain verifies and detects a seeded edit
+- [x] Exit-code precedence `3` > `1` > `2` > `0` (DD-39) tested; `run`/`attach` reserved in the CLI
+
+**Docs (0.D):** [M0 design](../../design/m0-foundation.md) · [CLI reference](../../reference/cli.md) ·
+[exit codes](../../reference/exit-codes.md) · [configuration](../../reference/configuration.md) ·
+[journal format](../../reference/journal-format.md) · [state layout](../../reference/state-layout.md) ·
+[development guide](../../guides/development.md) · [code review](codereview-log.md)
+
+**Status: ✅ closed 2026-11-27** — `dd7bf7b` on `feat/m0-foundation`; CI green ([run 46000026091](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000026091)).
 
 ---
 

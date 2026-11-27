@@ -96,9 +96,15 @@ work item 2.7 (#569) and updated the affected issues in place.
 
 ## Progress
 
-**⬜ M0 — Foundation, CLI & halt journal.** Next (the entry milestone; no user journey).
+**✅ M0 — Foundation, CLI & halt journal.** Closed 2026-11-27.
+**⬜ M1 — Halt store, dual choke & fail-closed.** Next.
 
-_No milestone closed yet. Checkpoints are appended here as each milestone closes (commit refs + gate result)._
+### Checkpoints
+
+- **2026-11-27 — M0 closed.** Commit `dd7bf7b` (`feat/m0-foundation`). Gate: 184 tests passed · coverage 99.91% ·
+  `ruff` zero · `mypy --strict` clean; CI green on Python 3.10–3.13 × ubuntu/macos + install smoke
+  ([run 46000026091](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000026091)). Review: 7 findings resolved ([log](codereview-log.md)). Decisions added:
+  DD-41, DD-42. Issues #399–#411 closed with evidence.
 
 ## PRD coverage matrix (every doc 00–40)
 
