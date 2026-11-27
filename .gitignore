@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# agenthalt local state (journal, receipts, evidence) — never committed
+.agenthalt/
+agenthalt.toml
+
+# OS
+.DS_Store

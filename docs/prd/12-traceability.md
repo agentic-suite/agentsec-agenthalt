@@ -12,7 +12,7 @@ and `doctor` that every later milestone builds on.
 
 | Milestone | Foundation deliverable | Acceptance test |
 |---|---|---|
-| M0 | CLI surface + reserved exit codes 0–5, fail-closed config loader, halt journal (hash chain), `doctor`, structured logs | CLI smoke + exit-code contract, `test_journal_tamper`, config precedence/fail-closed, `doctor` verdict (WBS 0.T) |
+| M0 | CLI surface + reserved exit codes 0–5, fail-closed config loader, halt journal (hash chain), `doctor`, structured logs | `tests/test_cli_surface.py`, `tests/test_exit_codes.py`, `tests/test_config.py`, `tests/test_journal.py`, `tests/test_doctor.py`, `tests/test_logs.py`, `tests/test_packaging.py`, `tests/test_ci_workflow.py`, `tests/test_docs.py` (WBS 0.T) |
 
 ## Requirement → CUJ → WBS → test → parity
 
@@ -98,6 +98,8 @@ Milestones follow the authored WBS (`docs/wbs/v0.1.0/`, M0–M13). Named tests c
 | DD-38 enrollment | R9, R2 |
 | DD-39 status precedence | R10 |
 | DD-40 self-attestation labelled | R10 |
+| DD-41 TOML config | — (M0 foundation) |
+| DD-42 unknown config keys rejected | R8 (fail-closed) |
 
 ## WBS
 

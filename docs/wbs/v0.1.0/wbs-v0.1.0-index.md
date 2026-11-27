@@ -115,7 +115,7 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-40 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-42 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -204,7 +204,7 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-40 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-42 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
@@ -249,6 +249,8 @@ maps to the milestone(s) that implement it:
 | **DD-38** Enrollment via `agenthalt run` / `attach` | M0, M2 | ADR-0009 |
 | **DD-39** Receipt status precedence `failed` > `incomplete` > `partial-layer` > `complete` | M0 (exit codes), M6 | ADR-0011 |
 | **DD-40** Self-attested confirmations labelled `attestation: self` | M4, M6 | ADR-0011 |
+| **DD-41** Config file format is TOML | M0 | — |
+| **DD-42** Unknown config keys rejected; unknown env names warn | M0 | — |
 
 ## Risks → milestone (PRD 08, RK-1..RK-25)
 
