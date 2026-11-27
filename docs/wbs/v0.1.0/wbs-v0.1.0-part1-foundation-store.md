@@ -54,7 +54,7 @@ depend on them forever ([PRD 37](../../prd/37-cli-and-output-ux-spec.md), Tier-0
 [journal format](../../reference/journal-format.md) · [state layout](../../reference/state-layout.md) ·
 [development guide](../../guides/development.md) · [code review](codereview-log.md)
 
-**Status: ✅ closed 2026-11-27** — `dd7bf7b` on `feat/m0-foundation`; CI green on the branch; #405 closes when CI is green on the PR ([run 46000026091](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000026091)).
+**Status: ✅ closed 2026-11-27** — `dd7bf7b` on `feat/m0-foundation`; landed on `docs/v0.1.0-planning` via #570; CI green on branch and PR ([run 46000026091](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000026091)).
 
 ---
 

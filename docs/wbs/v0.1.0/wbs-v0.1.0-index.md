@@ -104,8 +104,9 @@ work item 2.7 (#569) and updated the affected issues in place.
 - **2026-11-27 — M0 closed.** Commit `dd7bf7b` (`feat/m0-foundation`). Gate: 184 tests passed · coverage 99.91% ·
   `ruff` zero · `mypy --strict` clean; CI green on Python 3.10–3.13 × ubuntu/macos + install smoke
   ([run 46000026091](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000026091)). Review: 7 findings resolved ([log](codereview-log.md)). Decisions added:
-  DD-41, DD-42. Issues #399–#404 and #406–#411 closed with evidence; #405 stays open until CI is green on a pull request
-  (its literal acceptance criterion).
+  DD-41, DD-42. Issues #399–#411 closed with evidence (#405 after CI went green on PR #570,
+  [run 46000606887](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000606887)). Landed on
+  `docs/v0.1.0-planning` via #570 (`f509632`).
 
 ## PRD coverage matrix (every doc 00–40)
 
