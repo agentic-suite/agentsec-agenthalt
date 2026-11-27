@@ -97,7 +97,8 @@ work item 2.7 (#569) and updated the affected issues in place.
 ## Progress
 
 **✅ M0 — Foundation, CLI & halt journal.** Closed 2026-11-27.
-**⬜ M1 — Halt store, dual choke & fail-closed.** Next.
+**✅ M1 — Halt store, dual choke & fail-closed.** Closed 2026-11-27.
+**⬜ M2 — Lineage registry & subtree resolution.** Next.
 
 ### Checkpoints
 
@@ -107,6 +108,11 @@ work item 2.7 (#569) and updated the affected issues in place.
   DD-41, DD-42. Issues #399–#411 closed with evidence (#405 after CI went green on PR #570,
   [run 46000606887](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000606887)). Landed on
   `docs/v0.1.0-planning` via #570 (`f509632`).
+- **2026-11-27 — M1 closed.** Commits `0876349` (M1) + `9417027` (CI now runs on `docs/v0.1.0-planning` pushes), both
+  directly on the integration branch. Gate: 313 tests passed · coverage 100% · `ruff` zero · `mypy --strict` clean;
+  CI green on Python 3.10–3.13 × ubuntu/macos + install smoke ([run 46003485274](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46003485274)).
+  Review: 6 findings resolved ([log](codereview-log.md)). Decisions added: DD-43, DD-44. Issues #412–#423 closed with
+  evidence.
 
 ## PRD coverage matrix (every doc 00–40)
 

@@ -90,10 +90,17 @@ add the graph, the cuts, the evidence, and the proof.
 
 **Exit criteria**
 
-- [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
-- [ ] The halt store is the single source of stop truth; both chokes read it; cache TTL is seconds-scale
-- [ ] Every failure path is fail-closed with a distinct reason code; store-down ⇒ high-impact actions denied
-- [ ] The store integrity signal exists and is consumable by `tamper_store` (DD-36)
+- [x] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+- [x] The halt store is the single source of stop truth; both chokes read it; cache TTL is seconds-scale
+- [x] Every failure path is fail-closed with a distinct reason code; store-down ⇒ high-impact actions denied
+- [x] The store integrity signal exists and is consumable by `tamper_store` (DD-36)
+
+**Docs (1.D):** [M1 design](../../design/m1-halt-store-choke.md) · [halt store](../../reference/halt-store.md) ·
+[choke & fail-closed contract](../../reference/choke.md) · [CLI reference](../../reference/cli.md) ·
+[state layout](../../reference/state-layout.md) · [code review](codereview-log.md)
+
+**Status: ✅ closed 2026-11-27** — `0876349` (code) + `9417027` (CI trigger) on `docs/v0.1.0-planning`; CI green
+([run 46003485274](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46003485274)).
 
 ---
 
