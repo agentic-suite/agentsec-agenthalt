@@ -41,6 +41,8 @@ def test_least_privilege_and_triggers() -> None:
     assert re.search(r"^permissions:\n\s+contents: read", CI, re.M)
     assert "pull_request:" in CI
     assert '"feat/**"' in CI
+    # all v0.1.0 work lands on the integration branch, so pushes there must run the gate
+    assert '"docs/v0.1.0-planning"' in CI
 
 
 def test_dco_workflow_present() -> None:

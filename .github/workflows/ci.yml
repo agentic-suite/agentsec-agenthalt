@@ -4,7 +4,7 @@ name: CI
 
 on:
   push:
-    branches: [main, "feat/**", "release/**"]
+    branches: [main, "docs/v0.1.0-planning", "feat/**", "release/**"]
   pull_request:
 
 permissions:
