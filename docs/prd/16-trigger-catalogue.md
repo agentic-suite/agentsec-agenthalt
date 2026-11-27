@@ -30,6 +30,8 @@ triggers:
     default_mode: pause              # escalate-on-act (PRD 18)
 ```
 
+- The examples above are shown in YAML-like form for readability; on disk they are TOML `[[triggers]]` tables in
+  `agenthalt.toml` (DD-41).
 - Triggers are **declarative config**, validated at load (`agenthalt doctor`); an unknown trigger type is a
   config error, never a silent no-op.
 - Every trigger carries a **default scope + mode** and a **max scope** it may never widen past without

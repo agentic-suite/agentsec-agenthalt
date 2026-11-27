@@ -96,9 +96,16 @@ work item 2.7 (#569) and updated the affected issues in place.
 
 ## Progress
 
-**⬜ M0 — Foundation, CLI & halt journal.** Next (the entry milestone; no user journey).
+**✅ M0 — Foundation, CLI & halt journal.** Closed 2026-11-27.
+**⬜ M1 — Halt store, dual choke & fail-closed.** Next.
 
-_No milestone closed yet. Checkpoints are appended here as each milestone closes (commit refs + gate result)._
+### Checkpoints
+
+- **2026-11-27 — M0 closed.** Commit `dd7bf7b` (`feat/m0-foundation`). Gate: 184 tests passed · coverage 99.91% ·
+  `ruff` zero · `mypy --strict` clean; CI green on Python 3.10–3.13 × ubuntu/macos + install smoke
+  ([run 46000026091](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46000026091)). Review: 7 findings resolved ([log](codereview-log.md)). Decisions added:
+  DD-41, DD-42. Issues #399–#404 and #406–#411 closed with evidence; #405 stays open until CI is green on a pull request
+  (its literal acceptance criterion).
 
 ## PRD coverage matrix (every doc 00–40)
 
@@ -115,7 +122,7 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-40 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-42 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -204,7 +211,7 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-40 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-42 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
@@ -249,6 +256,8 @@ maps to the milestone(s) that implement it:
 | **DD-38** Enrollment via `agenthalt run` / `attach` | M0, M2 | ADR-0009 |
 | **DD-39** Receipt status precedence `failed` > `incomplete` > `partial-layer` > `complete` | M0 (exit codes), M6 | ADR-0011 |
 | **DD-40** Self-attested confirmations labelled `attestation: self` | M4, M6 | ADR-0011 |
+| **DD-41** Config file format is TOML | M0 | — |
+| **DD-42** Unknown config keys rejected; unknown env names warn | M0 | — |
 
 ## Risks → milestone (PRD 08, RK-1..RK-25)
 

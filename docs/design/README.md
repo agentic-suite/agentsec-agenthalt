@@ -9,7 +9,7 @@ the design doc.
 
 | M | Design doc (to be written at `.D0`) | Must decide | Bound by | Status |
 |---|---|---|---|---|
-| M0 | `m0-foundation.md` | CLI surface incl. `run`/`attach`, config precedence, exit-code contract (incl. DD-39 precedence), journal chain format, `doctor` checks (macOS Accessibility for the panic key, Linux cgroup v2 delegation for enrollment, hook surface) | PRD 13, 37, 40 · ADR-0009, 0011 | not started |
+| M0 | `m0-foundation.md` | CLI surface incl. `run`/`attach`, config precedence, exit-code contract (incl. DD-39 precedence), journal chain format, `doctor` checks (macOS Accessibility for the panic key, Linux cgroup v2 delegation for enrollment, hook surface) | PRD 13, 37, 40 · ADR-0009, 0011 | [reviewed](m0-foundation.md) |
 | M1 | `m1-halt-store-choke.md` | Store scopes/TTL/persistence, choke-read path and cache TTL, fail-closed reason codes, the store integrity signal (`unreachable`/`truncated`/`head_mismatch` while armed) that feeds `tamper_store` | PRD 02, 39 · ADR-0001, 0002, 0004, 0010 | not started |
 | M2 | `m2-lineage-enrollment.md` | Edge model + segments, ingestion priority, **enrollment supervisor** (process group / cgroup ownership), macOS escape handling, orphan + post-halt spawn rules, edge-deletion findings | PRD 27 · ADR-0008, 0009, 0010 | not started |
 | M3 | `m3-process-executor.md` | Executor contract, per-OS suspend/kill, block-new-first sequencing, deadline handling, how the zero-hook "runtime choke" is realised (suspend + egress) | PRD 02 §Mechanisms, 32 · ADR-0002, 0005 | not started |

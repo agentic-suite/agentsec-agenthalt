@@ -73,7 +73,10 @@ graph**, not a process:
 
 ## Quickstart
 
-> **Planned interface (v0.1.0).** The commands below are the documented contract; they are not yet runnable.
+> **Planned interface (v0.1.0).** The commands below are the documented contract. In this development build
+> only `agenthalt doctor` and `agenthalt journal` run; every other command is reserved, validates its arguments,
+> and exits `5` ("not available in this build") — the halt commands also point at the
+> [manual fallback](docs/prd/28-failure-mode-runbook.md). Halts are not yet runnable.
 
 ```sh
 pip install agentsec-agenthalt
@@ -95,6 +98,7 @@ agenthalt prove --receipt .agenthalt/receipts/hlt_01J.json
 
 | Command | Purpose |
 |---|---|
+| `agenthalt run` / `attach` | Launch an agent under the enrollment supervisor, or enroll a running one |
 | `agenthalt halt` | Raise a halt (`--agent` / `--session` / `--run` / `--all`, `--mode`) |
 | `agenthalt pause` / `quarantine` / `kill` | Mode shortcuts on the stop ladder |
 | `agenthalt resume` / `escalate` / `lift` | Resume a paused run, escalate a mode, lift a halt |
@@ -116,6 +120,8 @@ agenthalt prove --receipt .agenthalt/receipts/hlt_01J.json
 | `3` | Halt **failed** — blocking never established (see the manual fallback) |
 | `4` | Trigger **rejected** (auth / replay / scope ceiling / non-interactive) |
 | `5` | Usage / config error |
+
+When several outcomes apply, the worst wins: `3` > `1` > `2` > `0` (DD-39).
 
 ## The Receipt (proof-of-stop)
 
@@ -179,7 +185,12 @@ Full matrix: [PRD 19](docs/prd/19-harness-compatibility.md).
   test strategy, receipt schema, lineage, runbook, regulatory crosswalk, threat model, claims ledger,
   build-vs-integrate, battlecard, design-partner guide, drill catalogue, observability, CLI UX, privacy,
   performance budget, versioning.
-- **Architecture decisions** — [ADRs 0001–0008](docs/adr/README.md).
+- **Architecture decisions** — [ADRs 0001–0011](docs/adr/README.md).
+- **Design** — [per-milestone design docs](docs/design/README.md).
+- **Reference** — [CLI](docs/reference/cli.md) · [exit codes](docs/reference/exit-codes.md) ·
+  [configuration](docs/reference/configuration.md) · [journal format](docs/reference/journal-format.md) ·
+  [state layout](docs/reference/state-layout.md).
+- **Developing agenthalt** — [development guide](docs/guides/development.md).
 - **Work breakdown** — [WBS v0.1.0 (M0–M13)](docs/wbs/v0.1.0/wbs-v0.1.0-index.md).
 - **Contributing** — [org guide](https://github.com/agentic-suite/.github/blob/main/CONTRIBUTING.md).
 - **Security** — [SECURITY.md](./SECURITY.md).

@@ -1,3 +1,9 @@
-# Default owners for this repository.
-# Replace with the maintainer(s) for this tool.
+# Code owners for agentsec-agenthalt. Every path requires review from the maintainer.
 * @deghosal-2026
+
+# Tier-0 surfaces (PRD 40): exit codes, journal format, receipt/evidence schemas.
+# A change here is a compatibility decision, not a refactor.
+/src/agenthalt/exit_codes.py @deghosal-2026
+/src/agenthalt/journal.py    @deghosal-2026
+/docs/prd/                   @deghosal-2026
+/docs/adr/                   @deghosal-2026
