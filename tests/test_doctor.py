@@ -14,6 +14,7 @@ from agenthalt.cli import main
 from agenthalt.config import Config, ConfigError, load_config
 from agenthalt.doctor import Check, Probes, run_checks, verdict
 from agenthalt.journal import Journal
+from agenthalt.store import Store
 
 BASE = Probes(
     python=(3, 12),
@@ -51,10 +52,12 @@ def test_all_checks_present_and_healthy(tmp_path: Path) -> None:
         "cgroup",
         "hooks",
     ]
-    assert checks["store"].result == "n/a" and "M1" in checks["store"].detail
+    assert (
+        checks["store"].result == "warn" and "agenthalt status" in checks["store"].fix
+    )  # not created yet
     assert checks["adapters"].result == "n/a"
     assert checks["cgroup"].result == "n/a"  # linux-only check on darwin
-    assert verdict(list(checks.values())) == "pass"
+    assert verdict(list(checks.values())) == "warn"
 
 
 def test_verdict_is_the_worst_result() -> None:
@@ -275,4 +278,85 @@ def test_unreadable_journal(tmp_path: Path) -> None:
     j.append("finding", actor="t")
     (j.dir / "seg-000001.jsonl").write_bytes(b"\xff\xfe not utf-8\n")
     check = by_name(run_checks(cfg(tmp_path), probes()))["journal"]
-    assert check.result == "fail" and "unreadable" in check.detail
+    assert (
+        check.result == "fail" and "not UTF-8" in check.detail and "line None" not in check.detail
+    )
+
+
+# --- the store check (M1, #418) -------------------------------------------------------------
+
+
+def _armed_store(tmp_path: Path) -> Store:
+    from agenthalt.coordinator import Coordinator
+    from agenthalt.scopes import Mode, Scope
+    from agenthalt.store import Store
+
+    store = Store(tmp_path / ".agenthalt")
+    store.ensure()
+    Coordinator(store).raise_halt(Scope.parse("agent:bot"), Mode.KILL, actor="m", reason="r")
+    return store
+
+
+def test_store_check_healthy(tmp_path: Path) -> None:
+    _armed_store(tmp_path)
+    check = by_name(run_checks(cfg(tmp_path), probes()))["store"]
+    assert check.result == "pass" and "1 active halt" in check.detail
+
+
+def test_store_check_integrity_signal_fails(tmp_path: Path) -> None:
+    store = _armed_store(tmp_path)
+    store.path.unlink()
+    check = by_name(run_checks(cfg(tmp_path), probes()))["store"]
+    assert (
+        check.result == "fail" and "unreachable" in check.detail and "agenthalt status" in check.fix
+    )
+
+
+def test_store_check_recovering_warns(tmp_path: Path) -> None:
+    from agenthalt.scopes import Mode, Scope
+    from agenthalt.store import HaltState
+
+    store = _armed_store(tmp_path)
+    gen = store.load().generation
+    halt = HaltState.new(
+        halt_id="hlt_c", scope=Scope.parse("all"), mode=Mode.PAUSE, actor="m", reason="r"
+    )
+    store.journal.append(
+        "raise",
+        actor="m",
+        payload={
+            "store": {
+                "op": "upsert",
+                "generation": gen + 1,
+                "halt": halt.to_dict(),
+            }
+        },
+    )
+    check = by_name(run_checks(cfg(tmp_path), probes()))["store"]
+    assert check.result == "warn" and "recover" in check.fix
+
+
+def test_store_check_na_without_config(tmp_path: Path) -> None:
+    err = ConfigError("bad", key="home", source="flag")
+    assert by_name(run_checks(err, probes()))["store"].result == "n/a"
+
+
+def test_permission_denied_journal_segment(tmp_path: Path) -> None:
+    j = Journal(tmp_path / ".agenthalt")
+    j.append("finding", actor="t")
+    seg = j.dir / "seg-000001.jsonl"
+    os.chmod(seg, 0o000)
+    try:
+        check = by_name(run_checks(cfg(tmp_path), probes()))["journal"]
+        if os.geteuid() != 0:
+            assert check.result == "fail" and "unreadable" in check.detail
+    finally:
+        os.chmod(seg, 0o600)
+
+
+def test_hooks_detected_in_codex_toml(tmp_path: Path) -> None:
+    home = tmp_path / "user"
+    (home / ".codex").mkdir(parents=True)
+    (home / ".codex" / "config.toml").write_text('[hooks]\npre_tool = "agenthalt hook"\n')
+    check = by_name(run_checks(cfg(tmp_path), probes(user_home=home)))["hooks"]
+    assert check.result == "pass" and "codex-cli" in check.detail

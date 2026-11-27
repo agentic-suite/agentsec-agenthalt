@@ -74,9 +74,10 @@ graph**, not a process:
 ## Quickstart
 
 > **Planned interface (v0.1.0).** The commands below are the documented contract. In this development build
-> only `agenthalt doctor` and `agenthalt journal` run; every other command is reserved, validates its arguments,
-> and exits `5` ("not available in this build") — the halt commands also point at the
-> [manual fallback](docs/prd/28-failure-mode-runbook.md). Halts are not yet runnable.
+> `doctor`, `journal`, `status` and `lift` run, and `halt`/`pause`/`quarantine`/`kill` record a halt that the
+> runtime choke enforces — but processes are **not yet** suspended, revoked or killed (M3–M4), so a halt exits
+> `1` (`incomplete`) and points at the [manual fallback](docs/prd/28-failure-mode-runbook.md). The remaining
+> commands are reserved and exit `5`.
 
 ```sh
 pip install agentsec-agenthalt
@@ -189,7 +190,8 @@ Full matrix: [PRD 19](docs/prd/19-harness-compatibility.md).
 - **Design** — [per-milestone design docs](docs/design/README.md).
 - **Reference** — [CLI](docs/reference/cli.md) · [exit codes](docs/reference/exit-codes.md) ·
   [configuration](docs/reference/configuration.md) · [journal format](docs/reference/journal-format.md) ·
-  [state layout](docs/reference/state-layout.md).
+  [state layout](docs/reference/state-layout.md) · [halt store](docs/reference/halt-store.md) ·
+  [choke](docs/reference/choke.md).
 - **Developing agenthalt** — [development guide](docs/guides/development.md).
 - **Work breakdown** — [WBS v0.1.0 (M0–M13)](docs/wbs/v0.1.0/wbs-v0.1.0-index.md).
 - **Contributing** — [org guide](https://github.com/agentic-suite/.github/blob/main/CONTRIBUTING.md).

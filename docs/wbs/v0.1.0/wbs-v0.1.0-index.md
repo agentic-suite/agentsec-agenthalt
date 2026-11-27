@@ -123,7 +123,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-42 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-44 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -212,7 +212,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-42 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-44 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
@@ -259,6 +259,8 @@ maps to the milestone(s) that implement it:
 | **DD-40** Self-attested confirmations labelled `attestation: self` | M4, M6 | ADR-0011 |
 | **DD-41** Config file format is TOML | M0 | — |
 | **DD-42** Unknown config keys rejected; unknown env names warn | M0 | — |
+| **DD-43** Strictest mode wins when halts overlap | M1 | — |
+| **DD-44** M1 store same-OS-user + tamper-detected; separation with enrollment | M1, M2 | ADR-0009 |
 
 ## Risks → milestone (PRD 08, RK-1..RK-25)
 

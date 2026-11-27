@@ -107,7 +107,10 @@ class VerifyResult:
                 f"journal intact: {self.entries} entries in {self.segments} segment(s); "
                 f"head {self.head}"
             )
-        where = f"{self.segment} line {self.line}" if self.segment else "journal"
+        if self.segment and self.line is not None:
+            where = f"{self.segment} line {self.line}"
+        else:
+            where = self.segment or "journal"
         return f"journal BROKEN at {where}: {self.error}"
 
 
@@ -167,7 +170,12 @@ class Journal:
         return result.head
 
     def verify(self) -> VerifyResult:
-        segments = self._segments()
+        try:
+            segments = self._segments()
+        except OSError as exc:
+            return VerifyResult(
+                False, 0, GENESIS, 0, f"journal directory unreadable ({exc.strerror})"
+            )
         prev_hash, seq, count = GENESIS, 0, 0
         prior: tuple[str, str, int, str] | None = None  # name, head, entries, file sha256
         expected_number = 1
@@ -184,9 +192,32 @@ class Journal:
                     None,
                 )
             expected_number += 1
-            raw = path.read_bytes()
+            try:
+                raw = path.read_bytes()
+            except OSError as exc:
+                return VerifyResult(
+                    False,
+                    count,
+                    prev_hash,
+                    len(segments),
+                    f"segment unreadable ({exc.strerror})",
+                    name,
+                    None,
+                )
+            try:
+                text = raw.decode("utf-8")
+            except UnicodeDecodeError as exc:
+                return VerifyResult(
+                    False,
+                    count,
+                    prev_hash,
+                    len(segments),
+                    f"segment is not UTF-8 ({exc.reason})",
+                    name,
+                    None,
+                )
             seg_entries = 0
-            for line_no, line in enumerate(raw.decode("utf-8").splitlines(), start=1):
+            for line_no, line in enumerate(text.splitlines(), start=1):
                 fail = self._check_line(line, seq, prev_hash, line_no, prior)
                 if fail is not None:
                     return VerifyResult(False, count, prev_hash, len(segments), fail, name, line_no)

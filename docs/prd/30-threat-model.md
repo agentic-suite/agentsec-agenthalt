@@ -98,6 +98,10 @@ authorization state.
 
 - **Below-the-layers compromise** (rootkits, kernel implants): out of agenthalt's reach; the readout names the
   uncovered routes; agentkernel's eBPF layer is the ecosystem's partial answer where deployed.
+- **Same-OS-user store access (until M2):** in v0.1.0's first milestones the agent usually runs as the same OS
+  user as agenthalt and could open the `0600` store file. Every store change is committed to the hash-chained
+  journal, so an out-of-band edit raises the `head_mismatch` integrity signal; running agents under a separate OS
+  user via enrollment (M2, ADR-0009) removes the access itself (DD-44).
 - **A colluding boundary-2 component** can sign one lie until cross-layer contradiction catches it; the
   self-halt pack documents the detection window honestly.
 - **Physical-console access** defeats everything local; the panic key is *for* the person at the console.

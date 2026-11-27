@@ -38,6 +38,33 @@ Format: `#<n> [<milestone> Review] <area> — <finding> → <resolution> (<commi
   (Python 3.12, macOS). CI matrix 3.10–3.13 × ubuntu/macos runs on push.
 - **Resolution:** all findings resolved; no open findings.
 
+### M1 — Halt store, dual choke & fail-closed (1.CR, #422) — 2026-11-27
+
+- **Scope:** `scopes`, `reasons`, `store`, `choke`, `coordinator`, the M1 CLI (`halt`/`status`/`lift`), the `doctor`
+  store check, and their tests; reviewed against the [M1 design](../../design/m1-halt-store-choke.md), PRD 02/13/15/39,
+  ADR-0001/0002/0004/0010, DD-27/36/43/44.
+- **Findings:**
+  - #1 [M1 Review] coordinator — `advance()` read the halt and wrote it back outside the store lock, so a lift
+    landing in between was silently undone (the lifted halt re-inserted) → `Store.transition()` compare-and-set
+    under the lock; `test_a_lift_racing_an_advance_is_never_undone`, `test_two_advancers_cannot_both_move_a_halt`.
+  - #2 [M1 Review] journal — `verify()` raised on a non-UTF-8 segment, an unreadable segment, and an unlistable
+    journal directory (crashing `journal verify`, `status`, `doctor`) → each is reported as a broken chain; three
+    tests added; the now-dead `doctor` exception handler removed.
+  - #3 [M1 Review] store — `replay()` silently skipped an unknown store op, which could drop a halt from a rebuild
+    (fail-open) → raises `StoreCorruptError`; `health()` turns it into `head_mismatch`.
+  - #4 [M1 Review] cli — `status` caught a bare `Exception` → narrowed to `StoreError`/`JournalError`; the
+    halt-family branch of `_unavailable` became dead code once halts record → removed.
+  - #5 [M1 Review] choke — the `GatewayChoke` protocol declared `name` as settable, so frozen implementations did
+    not satisfy it → read-only property.
+  - #6 [M1 Review] tests — CLI tests ran in the repo working directory and, once halts started writing state, left a
+    `.agenthalt/` there → every CLI test runs in a temp dir (autouse fixture); stray state removed.
+- **Accepted, not changed (stated limits):** same-OS-user store access is detectable, not prevented, until
+  enrollment (DD-44, PRD 30); `health()` re-verifies the whole journal (O(history)) — acceptable for `status` and
+  `doctor`, never on the halt path, where the choke reads only the store; a `subtree` halt reaches descendants only
+  when the caller supplies `ancestors` until the lineage registry lands (M2).
+- **Gates:** suite 313 passed · coverage 100.00% · `ruff` zero · `ruff format` clean · `mypy --strict` clean.
+- **Resolution:** all findings resolved; no open findings.
+
 <!--
 ### M0 — Foundation, CLI & halt journal (0.CR)
 

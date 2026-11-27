@@ -49,7 +49,8 @@ lists), and cheap enough to drill in CI on every release.
 - **Every halt completes to a receipt**, even when layers fail: the receipt reports per-layer
   `confirmed`/`requested`/`unsupported`/`failed` — there is no "unknown" state after completion.
 - **Idempotency**: duplicate trigger of the same halt returns the existing receipt; concurrent different halts
-  compose by scope (a tighter scope wins within its subtree).
+  compose by scope: when several match, the **strictest mode wins** — a tighter scope may add a restriction but
+  never loosen one, so a narrow `pause` cannot weaken a fleet `kill` (DD-43).
 - Exit codes are always propagated (0 = clean stop, non-zero = incomplete/failed stop or error), `--ci` or not.
 - **Manual fallback**: the runbook ships the raw per-layer commands an operator runs if agenthalt itself is down
   (PRD 06) — the control plane must not be a single point of failure for the ability to stop at all.

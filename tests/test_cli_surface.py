@@ -30,6 +30,12 @@ ALL_COMMANDS = [
 ]
 
 
+@pytest.fixture(autouse=True)
+def _isolated(tmp_path: object, monkeypatch: pytest.MonkeyPatch) -> None:
+    # halts now write state (M1): never let a test touch the repo's working directory
+    monkeypatch.chdir(tmp_path)  # type: ignore[arg-type]
+
+
 def run(capsys: pytest.CaptureFixture[str], *argv: str) -> tuple[int, str, str]:
     code = main(list(argv))
     out, err = capsys.readouterr()
@@ -121,24 +127,24 @@ def test_fleet_halt_typed_confirmation_mismatch_is_rejected(
     assert code == 4
 
 
-def test_fleet_halt_confirmed_reaches_unavailable(
+def test_fleet_halt_confirmed_is_recorded(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr("builtins.input", lambda _prompt="": "halt all")
-    code, _, err = run(capsys, "kill", "--all", "--reason", "key compromise")
-    assert code == 5
-    assert "not available in this build" in err
+    code, out, _ = run(capsys, "kill", "--all", "--reason", "key compromise")
+    assert code == 1  # M1: recorded + enforced at the choke, layers not yet: incomplete
+    assert "all · kill" in out
 
 
 @pytest.mark.parametrize("cmd", ["halt", "pause", "quarantine", "kill"])
-def test_valid_halt_is_unavailable_with_manual_fallback(
+def test_valid_halt_is_recorded_with_manual_fallback(
     capsys: pytest.CaptureFixture[str], cmd: str
 ) -> None:
-    code, _, err = run(capsys, cmd, "--agent", "release-bot", "--reason", "prod mutation")
-    assert code == 5
-    assert "not available in this build" in err
-    assert "28-failure-mode-runbook.md" in err  # the manual fallback pointer
+    code, out, _ = run(capsys, cmd, "--agent", "release-bot", "--reason", "prod mutation")
+    assert code == 1  # incomplete: enforced at the choke only (M1 design §7)
+    assert "enforced at the runtime choke" in out
+    assert "28-failure-mode-runbook.md" in out  # the manual fallback pointer
 
 
 def test_halt_mode_choices(capsys: pytest.CaptureFixture[str]) -> None:
@@ -198,8 +204,6 @@ def test_attach_own_pid_is_unavailable(capsys: pytest.CaptureFixture[str]) -> No
     [
         ["resume", "--halt", "hlt_1"],
         ["escalate", "--halt", "hlt_1", "--to", "kill"],
-        ["lift", "--halt", "hlt_1", "--reason", "spoofed"],
-        ["status"],
         ["prove", "--receipt", "r.json"],
         ["drill"],
         ["evidence", "export", "--halt", "hlt_1"],

@@ -10,7 +10,9 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
     seg-000001.jsonl        0600  append-only, hash-chained segments
     seg-000002.jsonl        0600  each new segment opens with a rotation anchor
     .lock                   0600  advisory write lock (concurrent writers never fork the chain)
-  store/                          the live halt state (M1)
+  store/                    0700  the live halt state (M1)
+    state.json              0600  active halts — see halt store
+    .lock                   0600  serialises store writers
   lineage/                        append-only lineage edge segments (M2)
   halts/<halt_id>/                halt, subtree, stop plan, executions, confirmations (M3-M6)
   receipts/<halt_id>.json         proof-of-stop receipts, offline-verifiable (M6)
@@ -19,7 +21,7 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
   logs/                           structured logs, when log output goes to a file
 ```
 
-Only `journal/` exists in this build; the other directories are created by the milestone that owns them.
+`journal/` and `store/` exist in this build; the other directories are created by the milestone that owns them.
 
 ## Rules
 
@@ -30,4 +32,4 @@ Only `journal/` exists in this build; the other directories are created by the m
   it broke; the failure-mode runbook ([PRD 28](../prd/28-failure-mode-runbook.md)) tells you what to do.
 - **Not for version control.** `.agenthalt/` is in `.gitignore`; it holds incident records, not source.
 
-See also: [journal format](journal-format.md), [CLI reference](cli.md).
+See also: [halt store](halt-store.md), [journal format](journal-format.md), [CLI reference](cli.md).

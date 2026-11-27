@@ -9,6 +9,7 @@ this build"); the halt family also points at the manual fallback, because the pe
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import os
 import sys
@@ -18,11 +19,14 @@ from typing import NoReturn
 
 from agenthalt import __version__
 from agenthalt.config import Config, ConfigError, load_config
+from agenthalt.coordinator import Coordinator
 from agenthalt.doctor import Probes, format_checks, run_checks, verdict
-from agenthalt.exit_codes import ExitCode
+from agenthalt.exit_codes import ExitCode, ReceiptStatus, exit_code_for
 from agenthalt.ids import validate_id
 from agenthalt.journal import Journal, JournalError
 from agenthalt.logs import configure_logging, get_logger
+from agenthalt.scopes import Mode, Scope
+from agenthalt.store import Store, StoreError
 
 __all__ = ["COMMANDS", "main"]
 
@@ -51,7 +55,7 @@ class Command:
 COMMANDS: dict[str, Command] = {
     "run": Command("launch an agent under the enrollment supervisor", "M2"),
     "attach": Command("enroll an already-running agent (best-effort)", "M2"),
-    "halt": Command("raise a halt against a target", "M1-M9"),
+    "halt": Command("raise a halt against a target", "M1 (choke); layers M3-M4"),
     "pause": Command("halt in pause mode (freeze, resumable)", "M9"),
     "quarantine": Command("halt in quarantine mode (freeze + cut network)", "M9"),
     "kill": Command("halt in kill mode (terminate + revoke)", "M3-M4"),
@@ -213,17 +217,12 @@ def build_parser() -> _Parser:
 # --------------------------------------------------------------------------- handlers
 
 
-def _unavailable(command: str, *, halt_family: bool = False) -> int:
+def _unavailable(command: str) -> int:
     print(
         f"agenthalt {command}: not available in this build "
         f"(lands in {COMMANDS[command].lands_in}).",
         file=sys.stderr,
     )
-    if halt_family:
-        print(
-            f"  To stop an agent now, use the manual fallback: {MANUAL_FALLBACK}.",
-            file=sys.stderr,
-        )
     return int(ExitCode.USAGE)
 
 
@@ -296,13 +295,154 @@ def _doctor(args: argparse.Namespace, config: Config | ConfigError) -> int:
     return int(ExitCode.USAGE) if verdict(checks) == "fail" else int(ExitCode.COMPLETE)
 
 
+def _actor() -> str:
+    try:
+        return getpass.getuser()
+    except (KeyError, OSError):  # pragma: no cover - no passwd entry
+        return f"uid:{os.getuid()}"
+
+
+def _scope(args: argparse.Namespace) -> Scope:
+    if args.all:
+        return Scope("all")
+    if args.agent:
+        return Scope("agent", args.agent)
+    if args.session:
+        return Scope("session", args.session)
+    return Scope("subtree", args.run)  # --run means "one run and its subtree"
+
+
+def _store(config: Config) -> Store:
+    store = Store(
+        config.home, journal=Journal(config.home, segment_max_entries=config.segment_max_entries)
+    )
+    store.ensure()
+    return store
+
+
+def _halt(args: argparse.Namespace, config: Config) -> int:
+    mode = Mode.parse(args.command if args.command in HALT_MODES else args.mode)
+    scope = _scope(args)
+    result = Coordinator(_store(config)).raise_halt(scope, mode, actor=_actor(), reason=args.reason)
+    # An idempotent re-raise returns the halt already in force;
+    # in M1 its outcome is still incomplete.
+    outcome = result.outcome or ReceiptStatus.INCOMPLETE
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "halt_id": result.halt.halt_id,
+                    "created": result.created,
+                    "scope": str(result.halt.scope),
+                    "mode": result.halt.mode.label,
+                    "status": result.halt.status.value,
+                    "outcome": outcome.value,
+                    "layers": result.layers or None,
+                },
+                sort_keys=True,
+            )
+        )
+        return int(exit_code_for(outcome))
+    if result.created:
+        print(
+            f"halt {result.halt.halt_id} recorded — {scope} · {mode.label}: "
+            "enforced at the runtime choke."
+        )
+    else:
+        print(
+            f"halt {result.halt.halt_id} is already active for {scope} · {mode.label} (idempotent)."
+        )
+    print(
+        "  NOT done in this build: process suspend/kill, credential revoke, gateway, "
+        "sandbox (M3-M4)."
+    )
+    print(
+        f"  outcome: {outcome.value} (exit {int(exit_code_for(outcome))}). To stop the agent now, "
+        f"use the manual fallback: {MANUAL_FALLBACK}."
+    )
+    return int(exit_code_for(outcome))
+
+
+def _status(args: argparse.Namespace, config: Config) -> int:
+    store = _store(config)
+    health = store.health()
+    recovered = False
+    if health.status == "recovering":
+        store.rebuild()
+        store.journal.append(
+            "finding",
+            actor=_actor(),
+            payload={"finding": "store_recovered", "detail": health.detail},
+        )
+        recovered, health = True, store.health()
+    try:
+        halts = list(store.load().halts) if health.status == "ok" else list(store.replay().halts)
+    except (StoreError, JournalError):  # status still reports what it can
+        halts = []
+    if args.halt:
+        halts = [h for h in halts if h.halt_id == args.halt]
+        if not halts:
+            raise UsageError(f"agenthalt status: no active halt {args.halt}")
+    healthy = health.status == "ok" and health.signal is None
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "health": {
+                        "status": health.status,
+                        "signal": health.signal,
+                        "armed": health.armed,
+                        "detail": health.detail,
+                        "recovered": recovered,
+                    },
+                    "halts": [h.to_dict() for h in halts],
+                },
+                sort_keys=True,
+            )
+        )
+        return int(ExitCode.COMPLETE if healthy else ExitCode.INCOMPLETE)
+    if recovered:
+        print("store: recovered from the journal after an interrupted write")
+    line = f"store: {health.status}" + (
+        f" · integrity signal: {health.signal}" if health.signal else ""
+    )
+    print(f"{line} — {health.detail}")
+    if not halts:
+        print("no active halts")
+    for h in halts:
+        print(
+            f"  {h.halt_id}  {h.scope!s:<24} {h.mode.label:<10} {h.status.value:<9} "
+            f"set {h.set_at} by {h.actor} — {h.reason or '-'}"
+        )
+    if not healthy:
+        print(
+            f"  The store does not match the journal. Do not edit either; see {MANUAL_FALLBACK}.",
+            file=sys.stderr,
+        )
+        return int(ExitCode.INCOMPLETE)
+    return int(ExitCode.COMPLETE)
+
+
+def _lift(args: argparse.Namespace, config: Config) -> int:
+    try:
+        Coordinator(_store(config)).lift(args.halt, actor=_actor(), reason=args.reason)
+    except (LookupError, ValueError) as exc:
+        raise UsageError(f"agenthalt lift: {exc}") from None
+    print(f"halt {args.halt} lifted (journaled).")
+    return int(ExitCode.COMPLETE)
+
+
 def _dispatch(args: argparse.Namespace, run_command: list[str] | None, config: Config) -> int:
     command: str = args.command
     if command == "journal":
         return _journal(args, config)
     if command in ("halt", *HALT_MODES):
         _check_halt(args)
-        return _unavailable(command, halt_family=True)
+        return _halt(args, config)
+    if command == "status":
+        return _status(args, config)
+    if command == "lift":
+        return _lift(args, config)
     if command == "run":
         if not run_command:
             raise UsageError(

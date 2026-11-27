@@ -25,12 +25,12 @@ Global options go **before** the command: `agenthalt --home /var/lib/agenthalt d
 | `journal verify` | — | **runs** — verifies the hash chain | M0 |
 | `run` | `--name NAME` `-- <cmd> [args…]` | validates; exits 5 | M2 |
 | `attach` | `--pid PID` (required), `--name NAME` | validates the pid (live, yours); exits 5 | M2 |
-| `halt` | one of `--agent/--session/--run/--all`; `--mode {pause,quarantine,kill}` (default `pause`); `--reason`; `--deadline-ms`; `--yes`; `--json` | validates; exits 5 with the manual-fallback pointer | M1–M9 |
-| `pause` / `quarantine` / `kill` | as `halt`, mode fixed | as `halt` | M9 / M9 / M3–M4 |
+| `halt` | one of `--agent/--session/--run/--all`; `--mode {pause,quarantine,kill}` (default `pause`); `--reason`; `--deadline-ms`; `--yes`; `--json` | **runs** — records the halt (journal + store) so the [choke](choke.md) enforces it; nothing is suspended or revoked yet; exits **1** (`incomplete`) with the manual-fallback pointer | M1 (choke), M3–M4 (layers) |
+| `pause` / `quarantine` / `kill` | as `halt`, mode fixed | as `halt` | M1 (choke) |
 | `resume` | `--halt ID` | exits 5 | M9 |
 | `escalate` | `--halt ID --to MODE` | exits 5 | M9 |
-| `lift` | `--halt ID --reason TEXT` | exits 5 | M1 |
-| `status` | `--halt ID`, `--watch`, `--json` | exits 5 | M1, M6 |
+| `lift` | `--halt ID --reason TEXT` (required, non-blank) | **runs** — removes the halt, journaled; unknown id ⇒ 5 | M1 |
+| `status` | `--halt ID`, `--json` (`--watch` M6) | **runs** — active halts, store health and integrity signal; recovers an interrupted write; exit 1 if the store is unhealthy | M1 (readout M6) |
 | `prove` | `--receipt FILE` (required), `--evidence BUNDLE` | exits 5 | M6 |
 | `drill` | `--case NAME`, `--platform {macos,linux}`, `--all`, `--json` | exits 5 | M10 |
 | `evidence collect/export/verify` | `--halt ID` (required), `--out` | exits 5 | M5 |
@@ -45,6 +45,10 @@ Global options go **before** the command: `agenthalt --home /var/lib/agenthalt d
   without `--yes`, the command is **rejected with exit 4** — it never proceeds implicitly.
 - **Safe identifiers.** Target and halt ids must match `^[a-zA-Z0-9_-]+$` (1–128 chars).
 - **`run` needs a command** after `--`; `attach` refuses a missing pid or another user's process.
+- **Scopes:** `--agent X` ⇒ `agent:X`, `--session X` ⇒ `session:X`, `--run X` ⇒ `subtree:X` (the run and its
+  subtree), `--all` ⇒ `all`.
+- **Idempotent:** re-raising an active `(scope, mode)` returns the existing halt and journals a `duplicate_raise`
+  finding.
 
 Usage errors always exit **5**, never argparse's default 2 (2 means `partial-layer`). See
 [exit codes](exit-codes.md).

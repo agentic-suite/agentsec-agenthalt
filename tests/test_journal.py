@@ -478,3 +478,39 @@ def test_last_line_of_a_single_long_line(tmp_path: Path) -> None:
     path = tmp_path / "one.jsonl"
     path.write_text("x" * 10_000 + "\n", encoding="utf-8")
     assert _last_line(path, chunk=512) == "x" * 10_000
+
+
+def test_non_utf8_segment_is_reported_not_raised(tmp_path: Path) -> None:
+    j = journal(tmp_path)
+    fill(j, 1)
+    segment(j, 1).write_bytes(b"\xff\xfe garbage\n")
+    result = j.verify()  # must not raise
+    assert not result.ok and "UTF-8" in (result.error or "")
+
+
+def test_unreadable_segment_is_reported_not_raised(tmp_path: Path) -> None:
+    import os
+
+    j = journal(tmp_path)
+    fill(j, 1)
+    os.chmod(segment(j, 1), 0o000)
+    try:
+        result = j.verify()
+        if os.geteuid() != 0:
+            assert not result.ok and "unreadable" in (result.error or "")
+    finally:
+        os.chmod(segment(j, 1), 0o600)
+
+
+def test_unlistable_journal_directory_is_reported_not_raised(tmp_path: Path) -> None:
+    import os
+
+    j = journal(tmp_path)
+    fill(j, 1)
+    os.chmod(j.dir, 0o000)
+    try:
+        result = j.verify()
+        if os.geteuid() != 0:
+            assert not result.ok and "directory unreadable" in (result.error or "")
+    finally:
+        os.chmod(j.dir, 0o700)

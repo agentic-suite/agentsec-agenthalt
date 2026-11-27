@@ -18,7 +18,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from agenthalt.config import CONFIG_ENV, ENV_NAMES, Config, ConfigError
-from agenthalt.journal import Journal, JournalError
+from agenthalt.journal import Journal
 
 __all__ = ["Check", "Probes", "format_checks", "run_checks", "verdict"]
 
@@ -179,12 +179,9 @@ def _journal(cfg: Config | ConfigError) -> Check:
     journal = Journal(cfg.home, segment_max_entries=cfg.segment_max_entries)
     if not journal.dir.is_dir():
         return Check("journal", "pass", "no journal yet", "")
-    try:
-        result = journal.verify()
-    except (JournalError, OSError, UnicodeDecodeError) as exc:
-        return Check(
-            "journal", "fail", f"journal unreadable: {exc}", "run `agenthalt journal verify`"
-        )
+    result = (
+        journal.verify()
+    )  # reports unreadable/undecodable segments as a broken chain; never raises
     if not result.ok:
         return Check(
             "journal",
@@ -193,6 +190,37 @@ def _journal(cfg: Config | ConfigError) -> Check:
             f"run `agenthalt journal verify`; do not edit the journal — it is evidence ({RUNBOOK})",
         )
     return Check("journal", "pass", f"intact: {result.entries} entries; head {result.head}", "")
+
+
+def _store(cfg: Config | ConfigError) -> Check:
+    if isinstance(cfg, ConfigError):
+        return Check("store", "n/a", "config did not load", "")
+    from agenthalt.store import Store
+
+    store = Store(cfg.home, journal=Journal(cfg.home, segment_max_entries=cfg.segment_max_entries))
+    if not store.path.exists() and not store.journal.dir.exists():
+        return Check(
+            "store",
+            "warn",
+            "halt store not created yet — until it exists the choke denies high-impact actions",
+            "run `agenthalt status` to create it",
+        )
+    health = store.health()
+    if health.signal is not None:
+        return Check(
+            "store",
+            "fail",
+            f"integrity signal {health.signal}: {health.detail}",
+            f"run `agenthalt status`; do not edit the store or journal ({RUNBOOK})",
+        )
+    if health.status == "recovering":
+        return Check(
+            "store", "warn", health.detail, "run `agenthalt status` to recover from the journal"
+        )
+    if health.status != "ok":
+        return Check("store", "warn", health.detail, "run `agenthalt status` to create it")
+    count = len(store.load().halts)
+    return Check("store", "pass", f"ok · {count} active halt(s) · {health.detail}", "")
 
 
 def _panic_key(p: Probes) -> Check:
@@ -269,7 +297,7 @@ def run_checks(cfg: Config | ConfigError, probes: Probes) -> list[Check]:
         _env(cfg),
         _home(cfg),
         _journal(cfg),
-        Check("store", "n/a", "the halt store lands in M1", ""),
+        _store(cfg),
         Check("adapters", "n/a", "executor adapters land in M3-M4", ""),
         _panic_key(probes),
         _cgroup(probes),
