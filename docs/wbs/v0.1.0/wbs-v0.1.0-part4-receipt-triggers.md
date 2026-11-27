@@ -28,13 +28,13 @@ R11, R13**; [PRD 11](../../prd/11-decisions.md) DD-04/11; ADR-0003.
 | # | Task | Description | Deliverable | Acceptance | Issue | CUJ | Req |
 |---|---|---|---|---|---|---|---|
 | 6.D0 | **Design docs first** | Receipt schema v1, status vocabulary, readout fields, compensation model, verifier semantics | docs | reviewed before code | #472 | — | — |
-| 6.1 | **Receipt builder** | Assemble from **confirmations only**; fields per [PRD 26](../../prd/26-receipt-schema-and-examples.md); trigger/subtree/confirmations/refused-calls/evidence | builder | a `requested` never appears as a stop | #473 | CUJ-9 | R10 |
-| 6.2 | Status vocabulary + survivors invariant | `complete`/`incomplete`/`partial-layer`/`failed`; non-empty `survivors[]` **forces** `incomplete` | invariant | survivor ⇒ incomplete (schema-enforced) | #474 | CUJ-9 | R10 |
-| 6.3 | **Readout builder** | Unrevocable grants + residual windows, queued work, siblings, downstream agents, uncovered routes | readout | every residual named with its window | #475 | CUJ-10 | R11 |
-| 6.4 | **Compensation-list builder** | Already-landed side effects (kind/ref/`reversible:false`); never offers reversal | compensation | landed effects listed; no undo claim | #476 | CUJ-17 | R13 |
-| 6.5 | **Offline verifier** (`prove`) | Re-derive receipt hash, verify confirmation signatures, cross-check evidence chain; emits `VERIFIED (…)`/`TAMPERED` | CLI | third party verifies without agenthalt installed | #477 | CUJ-9 | R10 |
-| 6.6 | Receipt one-liner + `--json` | Human one-liner + full `--json` (the same object `prove` verifies); exit-code tie-in (0/1/2) | CLI output | one-liner accurate; `--json` matches schema | #478 | CUJ-10 | R11 |
-| 6.T | Tests | Receipt assembly, survivors invariant, readout fields, compensation, `prove` (golden + tamper), output modes | tests | all new paths covered; coverage ≥ 95% | #479 | — | — |
+| 6.1 | **Receipt builder** | Assemble from **confirmations only**; fields per [PRD 26](../../prd/26-receipt-schema-and-examples.md); trigger/subtree/confirmations/refused-calls/evidence; `attestation` per confirmation, `subtree.survivor_probe` | builder | a `requested` never appears as a stop | #473 | CUJ-9 | R10 |
+| 6.2 | Status vocabulary + survivors invariant | `complete`/`incomplete`/`partial-layer`/`failed`; non-empty `survivors[]` **forces** `incomplete`; precedence `failed` > `incomplete` > `partial-layer` > `complete` (DD-39) | invariant | survivor ⇒ incomplete (schema-enforced); survivor + missing layer ⇒ `incomplete` | #474 | CUJ-9 | R10 |
+| 6.3 | **Readout builder** | Unrevocable grants + residual windows, queued work, siblings, downstream agents, uncovered routes; `readout.coverage` names each field's source (`unavailable` ≠ empty) | readout | every residual named with its window | #475 | CUJ-10 | R11 |
+| 6.4 | **Compensation-list builder** | Already-landed side effects (kind/ref/`reversible:false`); never offers reversal; built from agentwatch trace-window tool calls with a known side-effect class — without agentwatch, `readout.coverage` marks it `unavailable` (never an empty list) | compensation | landed effects listed; no undo claim | #476 | CUJ-17 | R13 |
+| 6.5 | **Offline verifier** (`prove`) | Re-derive receipt hash, verify confirmation signatures, cross-check evidence chain; emits `VERIFIED (…)`/`TAMPERED`; reports self-attested confirmations distinctly (DD-40) | CLI | third party verifies without agenthalt installed | #477 | CUJ-9 | R10 |
+| 6.6 | Receipt one-liner + `--json` | Human one-liner + full `--json` (the same object `prove` verifies); exit-code tie-in (0/1/2/3, precedence per DD-39) | CLI output | one-liner accurate; `--json` matches schema | #478 | CUJ-10 | R11 |
+| 6.T | Tests | Receipt assembly, survivors invariant, readout fields, compensation, `prove` (golden + tamper), output modes, status precedence, `attestation`/`survivor_probe`/`readout.coverage` goldens | tests | all new paths covered; coverage ≥ 95% | #479 | — | — |
 | 6.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #480 | — | — |
 | 6.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #481 | — | — |
 | 6.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #482 | — | — |
@@ -48,6 +48,7 @@ R11, R13**; [PRD 11](../../prd/11-decisions.md) DD-04/11; ADR-0003.
 - [ ] Receipts are built from confirmations; a survivor forces `incomplete`
 - [ ] The readout answers the 09:01 question; the compensation list never claims reversal
 - [ ] `prove` verifies a receipt offline; a seeded edit reports `TAMPERED`
+- [ ] Status precedence (DD-39) holds; `attestation`, `survivor_probe` and `readout.coverage` are on every receipt
 
 ---
 
@@ -69,10 +70,10 @@ pattern that keep the switch from being a DoS lever.
 |---|---|---|---|---|---|---|---|
 | 7.D0 | **Design docs first** | Trigger catalogue (auth per path, replay windows, scope ceilings), halt-event schema, journal integration | docs | reviewed before code | #484 | — | — |
 | 7.1 | **Halt event emitter** (agentwatch) | `halt.raised`/`halt.completed`/`trigger.rejected` in the security-event schema; join on common id | emitter | SOC test alarms on a halt; events join | #485 | CUJ-14 | R6 |
-| 7.2 | CLI trigger + **panic key** | CLI halt; panic key bound to the **interactive session** (non-interactive rejected + journaled; no-op when idle) | triggers | panic key fires; non-interactive rejected | #486 | CUJ-12 | R4 |
-| 7.3 | **Alert webhook trigger** | HMAC-signed webhook, ±5 min replay window, per-source rate limit | trigger | signed accepted; replay/unsigned rejected | #487 | CUJ-11 | R4 |
-| 7.4 | PagerDuty + Slack triggers | PagerDuty button (incident-bound); Slack action (signed + principal) | triggers | both fire + journal actor/channel | #488 | CUJ-11 | R4 |
-| 7.5 | Scope ceilings + fleet confirmation | `max_scope` structural; `--all` requires typed confirmation or `--yes`; CI non-tty fleet halt ⇒ exit 4 | guardrails | scope cannot widen; fleet halt gated | #489 | CUJ-2 | R4 |
+| 7.2 | CLI trigger + **panic key** | CLI halt; panic key bound to the **interactive session** (non-interactive rejected + journaled; no-op when idle); target = the session user's most recent enrolled run; `doctor` checks the macOS Accessibility permission | triggers | panic key fires; non-interactive rejected | #486 | CUJ-12 | R4 |
+| 7.3 | **Alert webhook trigger** | HMAC-signed webhook, ±5 min replay window, per-source rate limit; `haltd` binds localhost by default, remote listener opt-in (RK-24) | trigger | signed accepted; replay/unsigned rejected | #487 | CUJ-11 | R4 |
+| 7.4 | PagerDuty + Slack triggers | PagerDuty button (incident-bound); Slack action (signed + principal); both capped at `max_scope: agent` (DD-16); Slack is cut-line candidate #4 (PRD 05) | triggers | both fire + journal actor/channel | #488 | CUJ-11 | R4 |
+| 7.5 | Scope ceilings + fleet confirmation | `max_scope` structural, capped at `agent` for every remote trigger; `--all` only from the local CLI by the store-owning principal, with typed confirmation or `--yes` (DD-16); CI non-tty fleet halt ⇒ exit 4 | guardrails | scope cannot widen; fleet halt gated | #489 | CUJ-2 | R4 |
 | 7.6 | Journal integration | `journal show`/`journal verify`; trigger record written **before** resolution; every raise/execute/lift/resume journaled | CLI + journal | journal-first enforced; verify detects tamper | #490 | — | R12 |
 | 7.T | Tests | Each trigger path + auth/replay/rate-limit, scope ceilings, event emission/join, journal-first, verify | tests | all new paths covered; coverage ≥ 95% | #491 | — | — |
 | 7.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #492 | — | — |
@@ -88,6 +89,7 @@ pattern that keep the switch from being a DoS lever.
 - [ ] All five launch triggers fire, authenticate, and journal actor/channel/reason
 - [ ] Halts + triggers emit agentwatch events that join on a common id
 - [ ] The journal is written first and verifies; scope ceilings and fleet confirmation hold
+- [ ] No remote trigger can raise `all`; `haltd` binds localhost by default
 
 ---
 

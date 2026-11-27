@@ -30,10 +30,10 @@ kit ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)), and record per-
 | 12.D0 | **Field-test plan + matrix** | The platform × harness × trigger × layer-set matrix; per-case steps; P/F/D classes; evidence-capture rules | plan | matrix reviewed before running | #544 | — | — |
 | 12.1 | Test matrix definition | Name every case (supported + expected-degraded + not-supported), per platform/harness | matrix | matrix complete + honest | #545 | — | — |
 | 12.2 | Run the cases | Execute each case; capture receipt + drill + journal artifacts | run artifacts | each case has an artifact | #546 | — | — |
-| 12.3 | **Demo validation** | Run the five demos (Replit, hostile harness, identity, dead-man-ready, panic key) end-to-end | demo logs | all demos pass in ≤ their timing budget | #547 | — | — |
-| 12.4 | Design-partner eval kit validation | Run the one-week kit's 10 questions against a real stack | eval report | ≥1 partner eval completed | #548 | — | — |
+| 12.3 | **Demo validation** | Run the five demos (Replit, hostile harness, identity, dead-man-ready, panic key) end-to-end | demo logs | all demos pass in ≤ their timing budget, with the receipt status predicted for the stack | #547 | — | — |
+| 12.4 | Design-partner eval kit validation | Run the one-week kit's 10 questions against a real stack; answers open decision #7 (is `partial-layer` without agentgate acceptable to partners?) | eval report | ≥1 partner eval completed | #548 | — | — |
 | 12.5 | **Field-test report** (hand-maintained) | Per-case verdicts (P/F/D), notes, found-issues table; **automation may never overwrite it** | report | report committed + hand-maintained | #549 | — | — |
-| 12.6 | Miss triage | Classify findings: blocker / defect / feature / out-of-scope ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)) | triage log | every finding classified | #550 | — | — |
+| 12.6 | Miss triage | Classify findings: blocker / defect / feature / out-of-scope ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)); revisits open decision #1 (lineage edge priority) with field data | triage log | every finding classified | #550 | — | — |
 | 12.T | Tests | Field cases re-expressed as regression tests where automatable | tests | automatable cases in the suite; coverage ≥ 95% | #551 | — | — |
 | 12.C | Coverage gate | Enforce coverage ≥ 95% (unchanged; field work adds no new untested path) | coverage report | ≥ 95% | #552 | — | — |
 | 12.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #553 | — | — |

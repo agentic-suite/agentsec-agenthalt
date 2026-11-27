@@ -81,13 +81,14 @@ mitigations · Acceptance criteria · Dependencies · References · Definition o
 `<!-- wbs:<item> -->`. **The `Issue` column in each part file holds the live number.** The two process items per
 milestone (`.CI` commit, `.W` WBS checkpoint) are tracked here, not as issues.
 
-**14 milestones · 169 issues** (`agentic-suite/agentsec-agenthalt`).
+**14 milestones · 170 issues** (`agentic-suite/agentsec-agenthalt`). The 2026-11-27 PRD consistency pass added
+work item 2.7 (#569) and updated the affected issues in place.
 
 | M | Milestone | Issues | M | Milestone | Issues |
 |---|---|---|---|---|---|
 | M0 | Foundation, CLI & halt journal | #399–#411 | M7 | Triggers, halt events & journal integration | #484–#495 |
 | M1 | Halt store, dual choke & fail-closed | #412–#423 | M8 | Zero-hook-surface containment & hostile-harness | #496–#506 |
-| M2 | Lineage registry & subtree resolution | #424–#435 | M9 | Pause/resume & the mode engine | #507–#518 |
+| M2 | Lineage registry & subtree resolution | #424–#435, #569 | M9 | Pause/resume & the mode engine | #507–#518 |
 | M3 | Process-tree containment (executor core) | #436–#447 | M10 | Drill runner, catalogue & CI chaos gate | #519–#530 |
 | M4 | Credential, gateway & sandbox executors | #448–#459 | M11 | NFRs, hardening, observability & claims | #531–#543 |
 | M5 | Evidence snapshot & hash chain | #460–#471 | M12 | Field tests | #544–#555 |
@@ -114,7 +115,7 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-35 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-40 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -152,17 +153,18 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 | R1 composed stop | M3, M4 | R13 irreversibility honesty | M6 |
 | R2 lineage containment | M2, M3 | R14 CI chaos drill | M10 |
 | R3 evidence snapshot | M5 | R15 graduated stops (v0.2.0) | — |
-| R4 trigger sources | M7 | R16 dead-man switches (v0.2.0) | — |
+| R4 trigger sources | M7 | R16 dead-man switches (v0.2.0; self-tamper subset ships v0.1.0, DD-36) | M1, M2, M8 (subset only) |
 | R5 zero-hook-surface containment | M8 | R17 drills-in-a-box (v0.2.0) | — |
 | R6 halt as agentwatch event | M7 | R18 halt authorization (v0.2.0) | — |
 | R7 pause/resume | M9 | R19 SaaS coverage (v0.2.0) | — |
-| R8 store + dual choke + fail-closed | M1 | R20 blast map (v0.2.0) | — |
-| R9 lineage registry | M2 | R21 offline bundles (v0.2.0) | — |
-| R10 proof-of-stop receipt | M6 | R22 halt-from-anywhere (v0.2.0) | — |
+| R8 store + dual choke + fail-closed | M1, M11 (fuzz matrix) | R20 blast map (v0.2.0) | — |
+| R9 lineage registry + enrollment | M0, M2 | R21 offline bundles (v0.2.0) | — |
+| R10 proof-of-stop receipt | M4 (signing), M6 | R22 halt-from-anywhere (v0.2.0) | — |
 | R11 the 09:01 readout | M6 | R23 fleet halt policies (v0.3.0) | — |
 | R12 tamper-evident journal | M0, M7 | R24 external attestation (v0.3.0) | — |
 
-> **Out of scope for v0.1.0** (tracked in [PRD 09](../../prd/09-roadmap.md)): requirements **R15–R24** and the
+> **Out of scope for v0.1.0** (tracked in [PRD 09](../../prd/09-roadmap.md)): requirements **R15–R24** (except
+> the R16 self-tamper subset, DD-36) and the
 > drill case **`fleet-drill`** (graduated modes, dead-man switches, drills-in-a-box, authorization, SaaS
 > coverage, blast map, offline bundles, halt-from-anywhere, fleet policies, external attestation) — these are
 > **v0.2.0/v0.3.0** and are deliberately absent from the v0.1.0 milestone work.
@@ -202,7 +204,7 @@ _No milestone closed yet. Checkpoints are appended here as each milestone closes
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-35 are honored across milestones; the eight accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-40 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
@@ -219,10 +221,10 @@ maps to the milestone(s) that implement it:
 | **DD-10** Snapshot-before-termination | M5 | ADR-0006 |
 | **DD-11** Irreversibility stated (compensation list) | M6 | — |
 | **DD-12** v0.1.0 scope = the composed stop | all (M0–M13) | — |
-| **DD-13** `kill` ships first; graduated modes v0.2.0 | M9 | — |
-| **DD-14** Dead-man switches v0.2.0 | v0.2.0 (out of scope) | — |
+| **DD-13** All three rungs at v0.1.0 as explicit commands; graduated semantics v0.2.0 | M9 | — |
+| **DD-14** External dead-man switches v0.2.0 (self-tamper at v0.1.0, DD-36) | v0.2.0 (out of scope) | ADR-0010 |
 | **DD-15** No console/UI beyond CLI in v1 | M0 | — |
-| **DD-16** Fleet dual-control v0.2.0 | v0.2.0 (out of scope) | — |
+| **DD-16** Fleet dual-control v0.2.0; v0.1.0 interim: `all` local-CLI-only, remote `max_scope ≤ agent` | M7 | — |
 | **DD-17** macOS + Linux at v0.1.0; Windows dated | M3, M12 | — |
 | **DD-18** agentgate degrades honestly until Wave 1 | M1, M4 | — |
 | **DD-19** Python core (library + daemon + CLI + MCP) | M0 | — |
@@ -242,10 +244,57 @@ maps to the milestone(s) that implement it:
 | **DD-33** Single composed-stop entry point | M4 | — |
 | **DD-34** Claims vocabulary enforced in CI | M11 | — |
 | **DD-35** Signed releases + provenance | M13 | — |
+| **DD-36** Self-tamper triggers at v0.1.0 (`tamper_store`/`tamper_hooks`/`tamper_lineage`) | M1, M2, M8 | ADR-0010 |
+| **DD-37** Pause max-TTL 24 h → `kill` (`pause_expired`) | M9 | — |
+| **DD-38** Enrollment via `agenthalt run` / `attach` | M0, M2 | ADR-0009 |
+| **DD-39** Receipt status precedence `failed` > `incomplete` > `partial-layer` > `complete` | M0 (exit codes), M6 | ADR-0011 |
+| **DD-40** Self-attested confirmations labelled `attestation: self` | M4, M6 | ADR-0011 |
 
-**Open additions** (from [PRD 21](../../prd/21-evidence-register-and-method.md) §PRD tensions): pause max-TTL
-default (M9), snapshot retention/encryption (M5/M11), reference-hardware classes (M11) — to be recorded as DD
-entries before those milestones close.
+## Risks → milestone (PRD 08, RK-1..RK-25)
+
+| Risk | Milestone(s) | Risk | Milestone(s) |
+|---|---|---|---|
+| RK-1 fail-open | M1, M11 | RK-14 store availability | M1, M11 (manual fallback) |
+| RK-2 lineage gap | M2, M8, M10 | RK-15 pause-limbo | M9 |
+| RK-3 false success | M4, M6 | RK-16 drill theater | M10, M12 |
+| RK-4 ≤1 s budget blown | M3, M10, M11 | RK-17 harness/OS churn | M12, M13 |
+| RK-5 trigger abuse / DoS | M7 | RK-18 regulatory overreach | M11, M13 |
+| RK-6 evidence destroyed | M5 | RK-19 irreversibility misunderstanding | M6 |
+| RK-7 unrevocable credentials | M4, M6 | RK-20 kill by default | M9 (pause-first), M0 (kill requires reason) |
+| RK-8 gateway bypass | M3 (egress), M4 | RK-21 ecosystem divergence | M4 (adapter boundary) |
+| RK-9 cross-platform semantics | M3, M12 | RK-22 self-halt pack rots | M11 |
+| RK-10 shutdown sabotage | M8 | RK-23 macOS lineage escape | M2, M11 |
+| RK-11 journal tamper | M0, M7 | RK-24 remote listener exposure | M7, M11 |
+| RK-12 receipt forgery | M4, M6 | RK-25 self-attestation | M3, M4, M6 |
+| RK-13 scope creep into enforcement | M3, M4 (adapter contract) | | |
+
+## Claims → milestone (PRD 31, C-01..C-12)
+
+Each claim is publishable only when the milestone that produces its proof artifact has closed.
+
+| Claim | Proof artifact | Milestone |
+|---|---|---|
+| C-01 composes four layers | compatibility table | M4, M13 |
+| C-02 ≤1 s (with drill artifact) | CI perf artifact | M10 |
+| C-03 zero survivors verified in drill | survivor gate | M8, M10 |
+| C-04 receipts from confirmations | `prove` goldens + signatures | M4, M6 |
+| C-05 zero-hook-surface harnesses | `hostile-harness` case | M8 |
+| C-06 agentwatch events | event-join test | M7 |
+| C-07 offline-verifiable evidence | chain + `prove` offline | M5 |
+| C-08 regulatory alignment | crosswalk | M11 |
+| C-09 pause/resume with full context | 24 h leg | M9 |
+| C-10 absorbs `ai-loopguard` triggers | parity closure | M11 |
+| C-11 free forever, Apache-2.0 | LICENSE + PRD 24 | M13 |
+| C-12 every failure mode fails closed | fuzz matrix | M1, M11 |
+
+**Open decisions** are tracked in the [PRD 21 open decisions register](../../prd/21-evidence-register-and-method.md)
+with the milestone that must close each one. #2 pause max-TTL is decided (DD-37). Due in v0.1.0 milestones:
+#1 lineage edge priority (adopt at 2.D0, revisit at 12.6), #5 snapshot retention/encryption (5.D0, 5.6, M11),
+#7 agentgate co-shipping (12.4 partner eval), #9 remote anchoring (5.D0), #10 verification-key publication
+(4.D0, M13), #11 enrollment mechanism (2.D0), #12 survivor-probe method (8.D0), #13 self-attestation key custody
+(4.D0), #14 reference hardware (11.D0). Out of v0.1.0 scope: #3 fleet quorum and #4 escalate-on-act (v0.2.0),
+#6 Windows (v0.2.0 planning), #8 stuck-loop triggers (v0.3.0). Each is recorded as a DD entry
+before its milestone closes. Design docs per milestone are indexed in [docs/design](../../design/README.md).
 
 ## v0.1.0 release gate (all milestones)
 
@@ -260,6 +309,8 @@ entries before those milestones close.
 - [ ] Pause/resume survives the 24 h wall-clock test (R7); fail-closed on every failure path (R8)
 - [ ] The journal verifies as an unbroken chain; a seeded edit is detected (R12)
 - [ ] The self-halt adversarial pack passes with zero crafted escapes (PRD 06)
+- [ ] The three self-tamper triggers fire in the drill (DD-36); no remote trigger can raise `all` (DD-16)
+- [ ] Every receipt carries status precedence, `attestation`, `survivor_probe` and `readout.coverage` (DD-39/40)
 - [ ] Field tests pass (M12); security audit + compatibility table + coverage matrix + standards/regulatory
       matrix + measured drill numbers + release notes (M13)
 - [ ] SBOM + signed artifacts (SLSA/Sigstore); OpenSSF Scorecard grade recorded

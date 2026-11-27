@@ -52,11 +52,11 @@ the 2026 literature documents:
 
 | Surface | Threat | Defense (test) |
 |---|---|---|
-| Halt store | The agent (or a Plugin4Shell-class compromise) suppresses, delays, or deletes the kill state | Store is outside the agent's control plane; dual choke fails **closed** when unreachable; store write is journaled; a suppression attempt is itself a dead-man trigger (R16) |
+| Halt store | The agent (or a Plugin4Shell-class compromise) suppresses, delays, or deletes the kill state | Store is outside the agent's control plane; dual choke fails **closed** when unreachable; store write is journaled; a suppression attempt is itself a self-tamper trigger (`tamper_store`, DD-36) |
 | Halt store | **DoS via the switch** — a hostile party floods halts (or halts `all`) to stop a healthy fleet | Trigger authentication + rate limits per principal; fleet-wide scope requires dual control (R18); every halt is journaled with its actor |
 | Lineage registry | **Edge deletion** — remove the parent→child edge so the child is never enumerated | Lineage edges are append-only + hash-chained with the journal; an unknown descendant found post-halt is a `survivors[]` entry and a loud finding (R10) |
 | Lineage registry | **Edge poisoning** — forge edges to halt *other* agents' subtrees (collateral damage) | Edge writes are authenticated (runtime adapter identity); a poisoned edge fails validation; blast scope is proven, not assumed (CUJ-3) |
-| Runtime / harness hooks | The agent edits or removes its own hooks — the "shutdown sabotage" the AI Kill Switch Act names | Hooks are **optional and never load-bearing** (R5): containment proceeds via process/credential/sandbox layers; hook removal is tamper detection → dead-man trigger (R16) |
+| Runtime / harness hooks | The agent edits or removes its own hooks — the "shutdown sabotage" the AI Kill Switch Act names | Hooks are **optional and never load-bearing** (R5): containment proceeds via process/credential/sandbox layers; hook removal is tamper detection → self-tamper trigger (`tamper_hooks`, DD-36) |
 | Gateway choke | A direct provider connection bypasses agentgate, so the choke never sees the call | Dual choke + sandbox egress block (agentseatbelt/agentkernel); the readout names any uncovered route (R11, CUJ-23) |
 | Credential layer | The agent copied a static key outside agentkeys' reach before the halt | The receipt names **unrevocable grants + residual windows** rather than claiming full revoke (CUJ-5); short-lived issuance (agentkeys R9) is the durable fix |
 | Trigger paths | **Trigger spoofing** — a forged webhook/PagerDuty halt, or a replayed one | Signed triggers, nonce/timestamp replay protection, principal binding; the halt journal records channel + principal (R4, R18) |
@@ -66,6 +66,7 @@ the 2026 literature documents:
 | Halt journal | An operator "fixes" the journal after a bad halt | Hash chain + verification command; rotation anchors the head; a missing segment is a loud finding (R12) |
 | Dead-man triggers | **False trigger injection** — forged budget-exhaustion/tamper events halt healthy agents | Triggers originate from authenticated ecosystem components (agentpolicy/agentkeys/agentkernel); a trigger event is itself journaled and verifiable (R16) |
 | The halt path itself | An attacker races the fan-out — acts between the halt write and the layer cuts | Order of operations: block-new-first at the choke (synchronous), then suspend/revoke (deadline-bounded); the refused-call log closes the race window in the receipt (PRD 02) |
+| `haltd` remote listener | The webhook/PagerDuty/Slack endpoints turn the control plane into a network service | Localhost bind by default; remote listeners opt-in, authenticated, rate-limited, `max_scope ≤ agent`; a listener crash never affects local CLI halts or the fail-closed choke (RK-24) |
 
 Anti-tamper principles: the stop lives **outside** the model's control plane; **fail-closed** on integrity
 failure; **assume the harness is compromised** (R5 is the test); **separation of duties** between what stops

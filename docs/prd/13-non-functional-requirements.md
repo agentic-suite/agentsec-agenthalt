@@ -97,7 +97,8 @@ lists), and cheap enough to drill in CI on every release.
 
 ## Observability & self-check
 
-- `agenthalt doctor` — environment/store/adapter sanity before you need it at 3 a.m.
+- `agenthalt doctor` — environment/store/adapter sanity before you need it at 3 a.m., including the platform
+  checks enrollment and the panic key depend on (Linux cgroup v2 delegation, macOS Accessibility).
 - `agenthalt status [--halt <id>]` — live halt state + the 09:01 readout.
 - `agenthalt prove --halt <id>` — receipt verification (online and offline).
 - `agenthalt drill [--platform <os>]` — the measured rehearsal; CI job runs it per release.

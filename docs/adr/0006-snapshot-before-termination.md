@@ -18,7 +18,7 @@ commit the snapshot's first chained segment → terminate → revoke → receipt
 before the snapshot's first segment commits; a halt that would destroy evidence first is a bug, not an
 optimization. The snapshot's *first segment* commits inside the halt window (≤150 ms,
 [PRD 39](../prd/39-performance-budget.md)); full capture completes asynchronously and the receipt reports
-`evidence: written → pending → written` honestly across that transition. Redaction runs between collection
+`evidence: pending → written` honestly across that transition. Redaction runs between collection
 and persistence — raw bytes never touch disk ([PRD 38](../prd/38-evidence-privacy-and-data-handling.md)).
 
 ## Consequences

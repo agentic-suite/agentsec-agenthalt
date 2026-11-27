@@ -51,28 +51,27 @@ them.
 | Rollback theater | E17 (+ the category's marketing) | Irreversibility honesty + compensation lists (R13) |
 | Regulatory capability sets with no operator-side mapping | E9, E10, E11 | The alignment matrix + the receipt as oversight evidence (PRD 20) |
 
-## PRD tensions (open decisions)
+## Open decisions register
 
-1. **Lineage edge source priority** — harness hook vs. process adapter vs. runtime adapter when they disagree.
-   Hypothesis: the process adapter wins (it is what containment acts on); needs design-partner data (RK-2).
-2. **Pause max-TTL default** — 24 h ships as the hypothesis; pause-limbo vs. destroyed legitimate pauses
-   (RK-15, [PRD 18](18-stop-modes.md)).
-3. **Fleet-halt quorum** — is 2 distinct approvers right for `--all`? (R18, needs design-partner input.)
-4. **Escalate-on-act defaults** — which attempt classes auto-escalate pause→quarantine→kill; false escalations
-   burn trust ([PRD 18](18-stop-modes.md) open questions).
-5. **Snapshot retention + encryption** — how long, where, who reads captured (redacted) secrets; ties to the
-   security baseline and agentwatch retention.
-6. **Windows timing** — v0.1.0 ships macOS + Linux; is the Windows job-object adapter v0.2.0 or design-partner
-   driven? (DD-17.)
-7. **agentgate co-shipping** — the gateway layer reports `unsupported` until agentgate v1.0 (Wave 1); is the
-   receipt's `partial-layer` status acceptable to design partners, or does v0.1.0 wait? (DD-18; hypothesis: ship
-   honest, don't wait.)
-8. **Stuck-loop triggers at v0.3.0** — the closest to "judgment" in the dead-man set; requires modes + RBAC
-   proven first (DD-14).
-9. **Remote anchoring default** — local chain anchor vs. RFC 3161 opt-in for high-assurance deployments
-   ([PRD 17](17-evidence-and-proof-format.md)).
-10. **Verification-key publication** — where offline verifiers get enforcement-point keys; hypothesis: the
-    release attestation bundle (PRD 20 ladder).
+Each open decision names the milestone that must close it (from the WBS) and the owning role
+([PRD 31](31-claims-ledger.md) roles). A decision that closes becomes a DD entry in [PRD 11](11-decisions.md).
+
+| # | Decision | Current position | Resolve by | Owner | Status |
+|---|---|---|---|---|---|
+| 1 | **Lineage edge source priority** — hook vs process adapter vs runtime adapter when they disagree | Process observation wins (ADR-0008, [PRD 27](27-lineage-model.md)) | M2 — WBS 2.D0 (adopt), M12 — WBS 12.6 (revisit with partner data) | eng | Adopted hypothesis |
+| 2 | **Pause max-TTL default** | 24 h, expiring to `kill` | — | owner | **Decided (DD-37)** |
+| 3 | **Fleet-halt quorum** — is 2 approvers right for `--all`? | 2; v0.1.0 uses local-CLI-only + typed confirmation (DD-16) | v0.2.0 (R18) | security | Open |
+| 4 | **Escalate-on-act defaults** — which attempt classes auto-escalate | None at v0.1.0 (manual `escalate` only, DD-13) | v0.2.0 (R15) | eng | Open |
+| 5 | **Snapshot retention + encryption** | 90 d hot → archive; trace window encrypted at rest | M5 (WBS 5.6), M11 | security | Open |
+| 6 | **Windows timing** | Not supported at v0.1.0 (DD-17) | v0.2.0 planning | owner | Open |
+| 7 | **agentgate co-shipping** — is `partial-layer` acceptable to partners? | Ship honest, don't wait (DD-18) | M12 — WBS 12.4 (partner eval) | owner | Adopted hypothesis |
+| 8 | **Stuck-loop triggers** | v0.3.0, after modes + RBAC are proven (DD-14) | v0.3.0 | eng | Deferred |
+| 9 | **Remote anchoring default** | Local anchor; RFC 3161 opt-in ([PRD 17](17-evidence-and-proof-format.md)) | M5 | security | Open |
+| 10 | **Verification-key publication** | The release attestation bundle | M4 (WBS 4.6), M13 | security | Open |
+| 11 | **Enrollment mechanism** — supervisor vs attach semantics, macOS escape handling | `agenthalt run` / `attach` (DD-38, RK-23) | M0 (CLI), M2 — WBS 2.D0 / 2.7 (registry + supervisor) | eng | Adopted hypothesis |
+| 12 | **Survivor-probe method per platform** | Liveness + egress observation; observer recorded in the receipt | M8 | eng | Open |
+| 13 | **Self-attestation key custody** — where the built-in executor key lives and how it rotates | Separate executor key, `attestation: self` (DD-40) | M4 | security | Open |
+| 14 | **Reference-hardware classes** | [PRD 39](39-performance-budget.md) table | M11 | release | Open |
 
 ## Method
 

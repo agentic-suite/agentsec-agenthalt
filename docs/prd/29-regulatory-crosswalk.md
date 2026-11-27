@@ -58,6 +58,9 @@ recommendations land (RK-18 discipline).
 
 ## Claims: allowed vs not
 
+> **Canonical source:** [PRD 31](31-claims-ledger.md) (C-08, F-04, F-07). This table is the regulatory view of
+> those rows; where they differ, PRD 31 wins.
+
 | Allowed (with artifact) | Forbidden (ever) |
 |---|---|
 | "Aligns to the capability set named in H.R. 9917 / NCSC / Art. 14 — see the crosswalk" | "H.R. 9917 compliant" / "NCSC compliant" / "Art. 14 compliant" |

@@ -4,8 +4,8 @@
 everyday "stop moving"), **`quarantine`** (freeze + cut network — investigate without destroying), and
 **`kill`** (terminate + revoke everything — emergency containment). The ladder maps onto the AI Kill Switch
 Act's graduated framework (throttle → disable → suspend → shut down) and the NCSC's "more than stopping the
-processes" clause. v0.1.0 ships the ladder's engine with `pause` + `kill` live (R7 requires pause/resume at
-v0.1.0; R15 graduates `quarantine` and the auto-escalation semantics at v0.2.0 — see DD-13); the mode design is
+processes" clause. v0.1.0 ships all three rungs as explicit operator commands: `pause`/`resume` (R7), a basic
+`quarantine`, and `kill`. R15 adds escalate-on-act and the auto-escalation defaults at v0.2.0 (see DD-13); the mode design is
 fixed **now** so the store format and the journal vocabulary never break.
 
 **Status:** Draft — v0.1.0 (2026-11-14) · **Owner:** @deghosal-2026 · **Parent:** agentic-suite #209 · PRD #216
@@ -55,7 +55,7 @@ fixed **now** so the store format and the journal vocabulary never break.
 | Uncertain, investigating, might resume | `pause` | Preserves everything; reversible; cheap |
 | Suspected compromise, exfiltration, injection | `quarantine` | Cuts reach without destroying evidence |
 | Active damage, prod mutation, credential theft | `kill` | The Replit case — stop everything now |
-| Fleet-wide key compromise | `kill --all` (dual control, v0.2.0) | One switch, every breaker, proven |
+| Fleet-wide key compromise | `kill --all` (local CLI + typed confirmation at v0.1.0, DD-16; dual control v0.2.0) | One switch, every breaker, proven |
 
 > **`pause` is the documented first move for the uncertain case; `kill` requires an explicit reason** (RK-20 —
 > muscle memory must not destroy evidence by default).

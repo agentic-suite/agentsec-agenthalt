@@ -64,6 +64,9 @@ release.
 
 ## F. Claims vocabulary (the honesty rule)
 
+> **Canonical source:** the claims ledger ([PRD 31](31-claims-ledger.md)) is the single machine-checked registry.
+> This table summarizes it for the standards context; where they differ, PRD 31 wins and this table is corrected.
+
 agenthalt may claim only what it can prove. The following are **forbidden** or **restricted**:
 
 | Claim | Status |

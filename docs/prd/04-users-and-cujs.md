@@ -65,7 +65,9 @@ A compromised key is shared across agents. Maya runs `agenthalt halt --all --rea
 ecosystem-visible agent is stopped, with the reason and actor journaled.
 
 **Acceptance criteria (P0):** one action stops all agents the ecosystem can see; each affected run appears in the
-receipt; the halt is authorized (RBAC, P1) and journaled; lifting the halt is a separate, logged action.
+receipt; the halt is authorized (at v0.1.0, by the local OS principal with a typed confirmation and never from a
+remote trigger, DD-16; RBAC/dual control at v0.2.0, R18) and journaled; lifting the halt is a separate, logged
+action.
 
 ### CUJ-3 — Contain the lineage ("stop the graph, not the parent")
 Ravi halts a coordinator agent. Its spawned specialists, shells and MCP servers must also stop — and agenthalt
@@ -80,7 +82,8 @@ network call.
 Maya wants a resumable quarantine: freeze the agent, keep its context, resume later without state corruption.
 
 **Acceptance criteria (P0):** `pause` freezes the subtree and blocks new actions while preserving session state;
-`resume` restores full context; pause/resume survives a **24 h wall-clock test**; a paused session that is never
+`resume` restores full context; pause/resume survives a **24 h wall-clock test** (run nightly and on the release candidate, not per PR —
+[PRD 25](25-test-strategy.md)); a paused session that is never
 resumed expires to a logged stop.
 
 ### CUJ-5 — Kill the credentials, not just the process ("the identity problem")

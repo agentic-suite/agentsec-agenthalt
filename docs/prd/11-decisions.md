@@ -30,10 +30,10 @@ rule that **agenthalt composes layers and owns none**.
 | # | Decision | Rationale |
 |---|---|---|
 | **DD-12** | **v0.1.0 = Wave 0**: composed stop + lineage + evidence + proof + readout + journal + triggers + pause/resume + drill | Matches the release-roadmap meta-MVP; "stop it" is Wave 0's headline |
-| **DD-13** | **Graduated modes ship v0.2.0; `kill` ships first** | One mode proven end-to-end beats three half-proven; pause/resume (R7) still ships at v0.1.0 as the resumable primitive ([PRD 18](18-stop-modes.md)) |
-| **DD-14** | **Dead-man switches are v0.2.0** (the absorbed `ai-loopguard` trigger class) | The trigger vocabulary is absorbed at v0.1.0 as design; live automatic halts need agentpolicy budgets in production first |
+| **DD-13** | **All three rungs ship at v0.1.0 as explicit commands; graduated semantics ship v0.2.0** | `kill`, `pause`/`resume` (R7) and a basic `quarantine` (network cut + issuance freeze) are operator-driven at v0.1.0, with a manual `escalate`. Escalate-on-act and auto-escalation defaults (R15) wait until each rung is proven end-to-end ([PRD 18](18-stop-modes.md)) |
+| **DD-14** | **External dead-man switches are v0.2.0** (budget, kernel, the absorbed `ai-loopguard` class); self-tamper triggers ship at v0.1.0 (DD-36) | The trigger vocabulary is absorbed at v0.1.0 as design; live automatic halts from external producers need agentpolicy budgets in production first. Tamper on agenthalt's own surfaces needs no external producer |
 | **DD-15** | **No console/UI beyond CLI in v1** | The stop is a command; review lives in receipts, events, and git |
-| **DD-16** | **Fleet `all` halts require dual control at v0.2.0; v0.1.0 documents the blast radius loudly** | The switch must not be a DoS lever (RK-5); v0.1.0 is single-operator by scope (local-first), the authorization layer lands with agentinbox |
+| **DD-16** | **Fleet `all` halts require dual control at v0.2.0; v0.1.0 documents the blast radius loudly** | The switch must not be a DoS lever (RK-5); v0.1.0 is single-operator by scope (local-first), the authorization layer lands with agentinbox. **v0.1.0 interim control:** `all` can be raised only from the local CLI by the OS principal that owns the store, with a typed confirmation; every remote trigger's `max_scope` is capped at `agent` ([PRD 16](16-trigger-catalogue.md)) |
 | **DD-17** | **macOS + Linux at v0.1.0; Windows documented not-supported with a dated plan** | The ecosystem's platforms; cross-platform process semantics are the top technical risk (RK-9) |
 | **DD-18** | **agentgate disconnect degrades honestly until agentgate v1.0 (Wave 1)** | The adapter reports `unsupported`; the receipt names the missing cut — never a silent skip (PRD 09) |
 
@@ -63,3 +63,13 @@ rule that **agenthalt composes layers and owns none**.
 | **DD-33** | **agenthalt is the ecosystem's single composed-stop entry point** — layers expose actions, not parallel kill policies | Ecosystem divergence is the structural risk (RK-21); one breaker box |
 | **DD-34** | **Claims vocabulary enforced in CI** — "composes", "verified in the drill", and "aligned to" are allowed; "H.R. 9917 compliant", "stops anything", "undoes" are forbidden | Regulatory overreach and rollback theater are banned claims (PRD 20 §G, RK-18/19) |
 | **DD-35** | **Signed releases + provenance** (Sigstore/SLSA) | Supply-chain trust; a security control's own supply chain must be clean |
+
+## Added in the PRD consistency review (2026-11-27)
+
+| # | Decision | Rationale |
+|---|---|---|
+| **DD-36** | **Self-tamper triggers ship at v0.1.0.** Store suppression, hook/config hash mismatch, and lineage-edge deletion raise a halt (`tamper_store` / `tamper_hooks` / `tamper_lineage`) | PRD 06, 27, 30 and drill case `edge-forgery` depend on "suppression is itself a trigger". These triggers start inside agenthalt's own trust boundary, so they need neither agentpolicy nor R18 ([PRD 16](16-trigger-catalogue.md)) |
+| **DD-37** | **Pause max-TTL defaults to 24 h**, expiring to `kill` with `reason_code=pause_expired`; configurable per scope | Closes the pause-TTL tension for v0.1.0 (RK-15); revisited with design-partner data |
+| **DD-38** | **Enrollment via `agenthalt run` / `agenthalt attach`** | "No edge, no containment" needs a root. A launcher that owns the process group/cgroup from spawn is the only hook-free way to get one ([PRD 02](02-architecture.md) §Mechanisms) |
+| **DD-39** | **Receipt status precedence: `failed` > `incomplete` > `partial-layer` > `complete`** | One halt can have a survivor *and* a missing layer; the worst true status wins, and exit codes follow it ([PRD 26](26-receipt-schema-and-examples.md), [PRD 37](37-cli-and-output-ux-spec.md)) |
+| **DD-40** | **Self-attested confirmations are labelled** (`attestation: self`) | agenthalt's built-in OS executor cannot be its own independent witness; the verifier reports self-attested cuts distinctly ([PRD 26](26-receipt-schema-and-examples.md)) |

@@ -72,6 +72,8 @@ Every row is a CI test; **no failure mode silently allows** ([PRD 13](13-non-fun
 3. Golden flip ⇒ build fails naming the fixture.
 4. Survivor anywhere ⇒ build fails (this is the product's one unforgivable defect class, RK-3).
 5. Claims linter ([PRD 31](31-claims-ledger.md)) green on docs/README changes.
+6. The 24 h pause/resume leg (R7) is too long for per-PR CI: it runs nightly and on the release candidate, and
+   its latest green run is attached to the release artifact.
 
 ## Test-data discipline
 

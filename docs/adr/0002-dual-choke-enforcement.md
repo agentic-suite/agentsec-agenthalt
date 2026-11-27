@@ -26,6 +26,9 @@ the model can talk past is a suggestion with better branding."*
   the readout names whatever neither choke sees (`uncovered_routes`).
 - Wave 0 ships without agentgate: the gateway half reports `unsupported`, the receipt says `partial-layer`
   honestly (DD-18) — the architecture is chosen now so adding agentgate closes a leg, not a redesign.
+- On a zero-hook harness the runtime half is enforced **below** the agent: scope-based process-tree
+  suspension plus the sandbox egress block deny the next action; hook/library reads of the store are
+  accelerants only ([PRD 02](../prd/02-architecture.md) §Mechanisms).
 - Two enforcement points to maintain and drill; the per-platform drill legs cover both.
 - Scope-based checking (not enumerated-id matching) makes the choke race-proof against post-halt spawns
   ([PRD 27](../prd/27-lineage-model.md)).

@@ -18,6 +18,10 @@ Every demo ends with the same two-screen close:
 > *"If the model can ignore it, it's a suggestion. If you can't show every descendant stopped, you didn't kill
 > it."* The demo is the product's argument, made live.
 
+> **Receipt status in these demos assumes agentgate is deployed.** On a Wave-0 stack (no agentgate) every
+> demo's honest expected status is `partial-layer` with the gateway row `unsupported` (DD-18), and the drill
+> golden predicts exactly that. A demo that shows `complete` without a gateway is a false success.
+
 ## Demo 1 — The Replit stop (flagship)
 
 **Incident class:** an agent mutates production and keeps going (E1, [PRD 01](01-why.md)).
@@ -30,7 +34,7 @@ Every demo ends with the same two-screen close:
 | **Expected receipt** | `complete`, 4 members confirmed, 3 refused calls, compensation lists the fake-prod writes, readout shows the queued job |
 | **Audience takeaway** | One command stopped the process **and** its credentials **and** its network — and the receipt proves it, seconds after the alert |
 | **Timing** | ≤ 90 s end-to-end |
-| **Failure condition** | Any survivor; receipt ≠ `complete`; stop > 1 s on the drill hardware (fix before demoing, per DD-29) |
+| **Failure condition** | Any survivor; a receipt status other than the one predicted for the stack (`partial-layer` without agentgate, `complete` with it); stop > 1 s on the drill hardware (fix before demoing, per DD-29) |
 
 ## Demo 2 — The hostile harness (Plugin4Shell)
 

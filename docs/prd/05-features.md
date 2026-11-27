@@ -18,6 +18,18 @@ table stakes: the **halt store + dual choke + fail-closed** spine (R8), the **li
 **proof-of-stop receipt** (R10), the **09:01 readout** (R11), and the **halt journal** (R12) — and the two honesty
 commitments: **irreversibility** (R13) and a **measured drill** (R14). Local-first, CI-verified.
 
+### Cut line (if the schedule slips)
+
+The release gate is R1–R14. If v0.1.0 must ship leaner, these are the candidate deferrals to v0.1.x, in order.
+None of them touches a Tier-0 surface ([PRD 40](40-support-versioning-and-deprecation.md)):
+
+1. The SOC pack's vendor-specific mappings (Splunk/Datadog/Elastic). Keep the Sigma rules and Grafana dashboards.
+2. The DSAR stub ([PRD 38](38-evidence-privacy-and-data-handling.md)).
+3. The generated regulatory crosswalk. Ship the hand-reviewed [PRD 29](29-regulatory-crosswalk.md) instead.
+4. The Slack trigger. R4 then ships four of five paths, stated in the release notes.
+
+Nothing in the halt store, lineage, executors, receipt, evidence, journal, or drill path is on this list.
+
 ## Requirements
 
 > Priority: **P0** (v0.1.0) · **P1** (v0.2.0) · **P2** (v0.3.0+). Ecosystem-PRD-216 requirements are marked
@@ -33,14 +45,14 @@ commitments: **irreversibility** (R13) and a **measured drill** (R14). Local-fir
 | **R6** | Every halt (and its trigger) is a **first-class agentwatch event** *(#216 R6)* | SOC dashboards can alarm on halts | P0 |
 | **R7** | **Pause/resume** — a paused session resumes with full context and no state corruption *(#216 R7)* | Pause/resume survives a 24 h wall-clock test | P0 |
 | **R8** | **Halt store + dual choke + fail-closed** — the authoritative kill state, read by the runtime *and* the gateway before an action executes; unreachable store → deny high-impact actions | Store down → high-impact actions denied; one check the model can talk past is not shipped | P0 |
-| **R9** | **Lineage registry** — every spawn records parent → child run ID; subtree resolution is a walk, not a guess | No edge, no containment: an untracked descendant fails the drill | P0 |
+| **R9** | **Lineage registry** — every spawn records parent → child run ID; subtree resolution is a walk, not a guess; **enrollment** (`agenthalt run` / `attach`) establishes the root ([PRD 02](02-architecture.md) §Mechanisms) | No edge, no containment: an untracked descendant fails the drill | P0 |
 | **R10** | **Proof-of-stop receipt** — confirmed stops and revokes (not requests), the refused-call log, and a `survivors[]` list | An unconfirmed descendant reports the halt `incomplete`, never `done` | P0 |
 | **R11** | **The 09:01 readout** — what is still running/reachable after the stop (live grants, queued work, siblings, downstream agents) | `status --halt <id>` names every residual with its window | P0 |
 | **R12** | **Tamper-evident halt journal** — append-only log of actor, scope, reason, timestamp, run IDs, mode, revoke status | Any edit breaks the chain; a halt cannot be quietly erased | P0 |
 | **R13** | **Irreversibility honesty** — no undo; a **compensation list** of already-landed side effects | The receipt lists committed side effects and never claims to reverse them | P0 |
 | **R14** | **CI chaos drill** — one command rehearses the full stop and measures it; a survivor fails the build | Alert→full-stop number is **measured** in CI every release | P0 |
-| **R15** | **Graduated stops** — `pause` (freeze, resumable) → `quarantine` (freeze + cut network) → `kill` (terminate + revoke everything) *(#216 R8)* | Each mode is a distinct, logged step; escalation is one command | P1 |
-| **R16** | **Dead-man switches** — automatic halt on agentpolicy budget exhaustion, tamper detection, or agentkernel kill triggers *(#216 R9)*; **absorbs `ai-loopguard`'s stuck-loop/budget triggers** | Each trigger fires a halt with a distinct `reason_code` and an auditable event chain | P1 |
+| **R15** | **Graduated stops** — escalate-on-act and auto-escalation across `pause` → `quarantine` → `kill`. The rungs themselves and the manual `escalate` command ship at v0.1.0 (R7, [PRD 18](18-stop-modes.md), DD-13) *(#216 R8)* | A paused/quarantined subtree that acts auto-escalates; escalation defaults are configurable and journaled | P1 |
+| **R16** | **Dead-man switches** — automatic halt on agentpolicy budget exhaustion, tamper detection, or agentkernel kill triggers *(#216 R9)*; **absorbs `ai-loopguard`'s stuck-loop/budget triggers**. The **self-tamper** triggers on agenthalt's own surfaces (store suppression, hook removal, lineage-edge deletion) ship at v0.1.0 (DD-36) | Each trigger fires a halt with a distinct `reason_code` and an auditable event chain | P1 |
 | **R17** | **Halt drills in a box** — one command to rehearse the full stop flow for partner runbooks *(#216 R10)* | A partner runs the drill and gets a pass/fail + measured time | P1 |
 | **R18** | **Halt authorization** — RBAC on halt scopes; **dual control** for fleet/tenant-wide halts; time-boxed **break-glass** with auto-revert | A single approval does not release a dual-control fleet halt; break-glass reverts without manual action | P1 |
 | **R19** | **Third-party/SaaS agent coverage** — halt via the layers reachable (credentials, gateway) and state plainly what cannot be stopped | Per-agent coverage recorded; the receipt says what it could not reach | P1 |
@@ -110,6 +122,8 @@ The ten things agenthalt does that no single-layer switch does — the reason it
 | F28 | Authorization — RBAC scopes, dual-control quorum, break-glass + auto-revert | R18 | new (P1) |
 | F29 | Blast map | R20 | new (P1) |
 | F30 | Offline evidence bundle | R21 | new (P1) |
+| F31 | Enrollment — `agenthalt run` supervisor + `agenthalt attach --pid` | R9 | new (DD-38) |
+| F32 | Trigger — self-tamper (store suppression, hook removal, lineage-edge deletion) | R5, R8, R9 | new (DD-36) |
 
 ## P1/P2 feature additions
 
@@ -168,7 +182,8 @@ narrowest primitive, and the emotional close of every demo — Wave 0's headline
 
 ## Success metrics (outcome-level)
 
-- **Stop time:** alert → full stop (process frozen, creds dead, evidence written) **≤ 1 s**, continuously
+- **Stop time:** alert → full stop (as defined in [PRD 39](39-performance-budget.md): choke blocking, subtree
+  suspended, revocable grants confirmed, first evidence segment committed) **≤ 1 s**, continuously
   verified in CI.
 - **Containment:** **zero surviving descendants** post-halt, proven in the drill.
 - **Reliability:** zero failed halts across a release cycle.

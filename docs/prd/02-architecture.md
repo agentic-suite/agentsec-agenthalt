@@ -91,16 +91,38 @@ One logical operation, several bindings (library / CLI / MCP / HTTP):
 - **Output:** `{ halt_id, scope, mode, layers_attempted[], confirmations[{layer,target,status}], survivors[],
   evidence_ref, receipt_ref, readout }`.
 - **Modes:** `pause` (freeze, resumable) · `quarantine` (freeze + cut network) · `kill` (terminate + revoke).
-  v0.1.0 ships `kill`; `pause`/`quarantine` are [PRD 05](05-features.md) P1 (R15).
+  v0.1.0 ships all three rungs as explicit operator commands: `kill`, `pause`/`resume` (R7), and a basic
+  `quarantine` (network cut + credential-issuance freeze). The *graduated* semantics (escalate-on-act,
+  auto-escalation defaults) are [PRD 05](05-features.md) P1 (R15). See [PRD 18](18-stop-modes.md) and DD-13.
 
 ## Dual choke and fail-closed by construction
 
 - **Dual choke:** the halt state is read in the **runtime** (before the agent acts) *and* in the **tool gateway**
   (before the call leaves). One check the model can talk past is a suggestion.
+- **v0.1.0 reality (stated, not hidden):** until agentgate v1.0 (Wave 1) the gateway half reports `unsupported`
+  (DD-18). On a zero-hook harness the "runtime" half is enforced **below** the agent, not inside it:
+  scope-based suspension of the process tree plus the sandbox egress block are what deny the next action;
+  hook/library reads of the store are accelerants where a surface exists. Receipts on such stacks report
+  `partial-layer`, never `complete`.
 - **Fail closed:** halt store unreachable → high-impact actions are **denied**, never allowed. Adapter failure →
   agenthalt escalates to a stronger mode (pause → quarantine → kill) and reports the partial state honestly.
 - **No false success:** if any descendant is unconfirmed, the receipt says so and the readout lists it. A halt
   that cannot prove containment reports `incomplete`, never `done`.
+
+## Mechanisms the contract depends on (v0.1.0)
+
+These are the concrete mechanisms behind the promises above. Each is a working hypothesis, fixed in the owning
+milestone's design doc before code.
+
+| Mechanism | v0.1.0 approach | Owner milestone |
+|---|---|---|
+| **Enrollment** — how a run gets a run ID and a lineage root | `agenthalt run -- <cmd>` launches the agent under a supervisor that owns its process group (macOS) or a dedicated cgroup (Linux) and records the root edge. `agenthalt attach --pid <pid>` enrolls an already-running agent best-effort (`lineage_verified: false` until a full walk succeeds). An un-enrolled agent can only be halted by explicit pid, and the receipt says so (DD-38) | M0, M2 |
+| **Runtime choke** | A library/hook read of the store where a surface exists; on zero-hook harnesses, scope-based suspension + egress block (see *Dual choke* above) | M1, M3, M8 |
+| **Lineage capture on macOS** | Process groups are escapable (`setsid`, double-fork into a new session). The supervisor adds ancestry polling + session/uid scoping; anything that leaves the observed set is a `lineage_gap` / `orphans[]` finding. Endpoint-Security-grade capture is agentseatbelt's job where deployed (RK-23) | M2, M3 |
+| **Survivor detection** | A post-halt probe over the halt window: liveness of every enumerated member plus outbound-connection observation (sandbox/egress logs where deployed; `lsof` / `/proc/net` sampling otherwise). The receipt records the probe's method and observer (`subtree.survivor_probe`): "no call observed" is only as strong as the observer | M8 |
+| **Confirmation signing** | Each composed layer signs its own confirmations with its own key. Where agenthalt's built-in OS executor performs the cut (no agentseatbelt/agentkernel), agenthalt signs with a separate executor key and labels the confirmation `attestation: self`, so a verifier can tell self-attested cuts from third-party ones (DD-40) | M4, M6 |
+| **Readout & compensation sources** | Built only from observed data: compensation items from the agentwatch trace window (tool calls with a known side-effect class); queued work and downstream agents from agentwatch delegation events; siblings from the lineage registry. Without agentwatch these fields are marked `unavailable` in `readout.coverage`, never shown as an empty list | M5, M6 |
+| **Remote trigger listener** | `haltd` binds to localhost by default; webhook/PagerDuty/Slack listeners are opt-in, authenticated, rate-limited, and capped at `max_scope: agent`. A listener failure never affects local CLI halts or the fail-closed choke ([PRD 30](30-threat-model.md)) | M7 |
 
 ## Standards
 

@@ -23,8 +23,8 @@ absent; the `hostile-harness` drill case removes the hooks on camera and asserts
 
 - agenthalt works on zero-hook harnesses by construction (R5) — the harness-agnostic mandate is satisfied
   architecturally, not by N integrations ([PRD 19](../prd/19-harness-compatibility.md)).
-- Hook-removed and hook-tampered cases are *features* of the threat model: removal is tamper detection → a
-  dead-man trigger (R16).
+- Hook-removed and hook-tampered cases are *features* of the threat model: removal is tamper detection → the
+  `tamper_hooks` self-tamper trigger, shipped at v0.1.0 (ADR-0010).
 - Cost: hook-less lineage is process-observation-based (best-effort edges, orphan watchlist —
   [PRD 27](../prd/27-lineage-model.md)); graceful in-process stops are a courtesy, never a mechanism.
 - Demo 2 exists to prove this ADR in public ([PRD 22](../prd/22-demo-scenarios.md)).

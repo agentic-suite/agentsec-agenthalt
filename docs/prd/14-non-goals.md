@@ -24,7 +24,7 @@ detector, a policy engine, a gateway, a credential broker, a sandbox, or a time 
 | **In-process decorators / agent-embedded switches** | A switch that lives where the agent lives dies where it dies — the "model can ignore it" rule | — |
 | **Forensic analysis of the snapshot** | agenthalt produces the evidence; it does not investigate it | AgentDFIR-class tooling; agentcomply (evidence → controls) |
 | **Attack simulation / red-teaming** | agentdrill attacks *policies*; agenthalt's drill tests the *stop* — the purposes are different | agentdrill (shares the pack-runner pattern, not the purpose) |
-| **Fleet halts without authorization design** (v0.1.0) | `all`-scoped halts need RBAC/dual-control first (RK-5) | R18 at v0.2.0 (with agentinbox) |
+| **Remote or multi-operator fleet halts** (v0.1.0) | `all`-scoped halts need RBAC/dual control before any remote path may raise them (RK-5); v0.1.0 allows `all` only from the local CLI with a typed confirmation (DD-16) | R18 at v0.2.0 (with agentinbox) |
 
 ## What agenthalt is *not* claiming
 

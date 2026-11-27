@@ -7,41 +7,44 @@ test, and its parity disposition. No requirement is orphaned and no absorbed cap
 
 ## Foundation milestone (M0)
 
-M0 carries no new R-items; it establishes the coordinator, config, journal, and CLI surface every later milestone
-builds on.
+M0 carries no new R-items beyond the journal (R12); it establishes the CLI, config, enrollment surface, journal,
+and `doctor` that every later milestone builds on.
 
 | Milestone | Foundation deliverable | Acceptance test |
 |---|---|---|
-| M0 | Coordinator skeleton, halt config model, halt journal (hash chain), CLI surface + reserved exit codes, fail-closed config loader, `agenthalt doctor` | `tests/test_cli_surface.py`, `tests/test_journal.py`, `tests/test_config.py`, `tests/test_doctor.py` |
+| M0 | CLI surface + reserved exit codes 0–5, fail-closed config loader, halt journal (hash chain), `doctor`, structured logs | CLI smoke + exit-code contract, `test_journal_tamper`, config precedence/fail-closed, `doctor` verdict (WBS 0.T) |
 
 ## Requirement → CUJ → WBS → test → parity
 
+Milestones follow the authored WBS (`docs/wbs/v0.1.0/`, M0–M13). Named tests come from
+[PRD 25](25-test-strategy.md) and [PRD 27](27-lineage-model.md); drill cases from [PRD 35](35-drill-pack-catalogue.md).
+
 | Req | Requirement (short) | CUJ | WBS | Acceptance test | Parity ([PRD 10](10-feature-parity.md)) |
 |---|---|---|---|---|---|
-| **R1** | Composed stop across every available layer, ≤1 s | CUJ-1, CUJ-2 | M1, M3 | Alert → full stop ≤ 1 s in the drill · `tests/test_m1_compose.py`, `tests/test_m3_drill.py` | New (the unowned primitive) |
-| **R2** | Lineage containment — zero surviving descendants | CUJ-3, CUJ-7 | M2 | Post-halt network-call probe: zero · `tests/test_m2_lineage.py`, `tests/test_m2_subtree.py` | New (P17 principle) |
-| **R3** | Evidence snapshot, hash-chained + timestamped | CUJ-8 | M4 | Snapshot written before termination; chain verifies · `tests/test_m4_snapshot.py` | Re-scoped (P19) |
-| **R4** | Trigger sources (CLI, webhook, PagerDuty, Slack, panic key) | CUJ-11, CUJ-12 | M6 | Each trigger path fires + is journaled in the drill · `tests/test_m6_triggers.py` | New |
-| **R5** | Zero-hook-surface containment (hostile harness) | CUJ-13 | M3 | Hooks-removed fixture fully contained · `tests/test_m3_hostile.py` | New |
-| **R6** | Halt + trigger as agentwatch events | CUJ-14 | M5 | Events join on a common id; SOC test alarms · `tests/test_m5_events.py` | Delivered, superseded (P18) |
-| **R7** | Pause/resume, 24 h integrity | CUJ-4 | M7 | 24 h wall-clock resume, no corruption · `tests/test_m7_pause.py` | New |
-| **R8** | Halt store + dual choke + fail-closed | CUJ-16 | M1 | Store-down ⇒ deny high-impact; fuzzed failure matrix · `tests/test_m1_failclosed.py` | Inverted (P10) |
-| **R9** | Lineage registry (append-only edges) | CUJ-3 | M2 | Edge deletion/poisoning detected · `tests/test_m2_edges.py` | New |
-| **R10** | Proof-of-stop receipt (confirmations) | CUJ-9 | M4 | Unconfirmed descendant ⇒ `incomplete`; receipt verifies offline · `tests/test_m4_receipt.py` | New (P5) |
-| **R11** | The 09:01 readout | CUJ-10 | M4 | Readout names survivors, grants, queued work · `tests/test_m4_readout.py` | Re-scoped (P14) |
-| **R12** | Tamper-evident halt journal | CUJ-9, CUJ-14 | M0, M5 | Seeded edit detected; rotation anchors · `tests/test_journal.py`, `tests/test_m5_chain.py` | Delivered, extended (P5) |
-| **R13** | Irreversibility honesty (compensation list) | CUJ-17 | M4 | Receipt lists landed side effects; no reversal claims · `tests/test_m4_compensation.py` | New (the honesty rule) |
-| **R14** | CI chaos drill (measured; survivor = fail) | CUJ-15 | M3, M9 | Drill measures ≤1 s p95 in CI; survivor fails build · `tests/test_m3_drill.py`, CI job | New |
-| **R15** | Graduated stops (pause/quarantine/kill) | CUJ-18 | M8 | Mode steps logged; escalation one command · `tests/test_m8_modes.py` | New (v0.2.0) |
-| **R16** | Dead-man switches (budget/tamper/kernel; `ai-loopguard` triggers) | CUJ-19, CUJ-20 | M8 | Each trigger fires a halt with distinct reason_code · `tests/test_m8_deadman.py` | Delivered, re-pointed (P1, P2) |
-| **R17** | Drills-in-a-box (partner runbooks) | CUJ-15 | M9 | Non-author runs the drill; pass/fail + time · `tests/test_m9_partner_drill.py` | New (v0.2.0) |
-| **R18** | Halt authorization (RBAC, dual control, break-glass) | CUJ-21 | M10 | One approval ≠ fleet halt; break-glass auto-reverts · `tests/test_m10_authz.py` | Delegated gate (P9) |
-| **R19** | Third-party/SaaS agent coverage | CUJ-22 | M10 | Per-agent coverage recorded; limits stated · `tests/test_m10_saas.py` | New (v0.2.0) |
-| **R20** | Blast map | CUJ-23 | M10 | Residuals named with windows · `tests/test_m10_blastmap.py` | New (v0.2.0) |
-| **R21** | Offline evidence bundle | CUJ-24 | M9 | Third party verifies without agenthalt installed · `tests/test_m9_offline.py` | New (v0.2.0) |
-| **R22** | Halt-from-anywhere (Slack + agentinbox mobile) | CUJ-25 | M10 | Channel + principal journaled; anti-spoofing applies · `tests/test_m10_channels.py` | New (v0.2.0) |
-| **R23** | Fleet halt policies ("auto-quarantine X") | later | later | Policy match raises a halt with rule id | New (v0.3.0) |
-| **R24** | External halt attestation | later | later | Signed third-party drill result attachable | New (v0.3.0) |
+| **R1** | Composed stop across every available layer, ≤1 s | CUJ-1, CUJ-2, CUJ-5, CUJ-6, CUJ-7 | M3, M4 | drill `replit-stop` (≤1 s p95, PRD 39 clock) · `test_deadline_partial` · `test_layer_missing` | New (the unowned primitive) |
+| **R2** | Lineage containment — zero surviving descendants | CUJ-3, CUJ-7 | M2, M3 | `test_spawn_race` · `test_double_fork_stays` · `test_drill_survivor` · drill `spawn-race` | New (P17 principle) |
+| **R3** | Evidence snapshot, hash-chained + timestamped | CUJ-8 | M5 | `test_snapshot_canary` · `test_evidence_degrade` · drill `evidence-canary` | Re-scoped (P19) |
+| **R4** | Trigger sources (CLI, webhook, PagerDuty, Slack, panic key) | CUJ-2, CUJ-11, CUJ-12 | M7 | `test_trigger_replay` · `test_panic_binding` · drills `panic-key`, `trigger-spoof` | New |
+| **R5** | Zero-hook-surface containment (hostile harness) | CUJ-13 | M8 | drill `hostile-harness` (Demo 2) · self-tamper `tamper_hooks` | New |
+| **R6** | Halt + trigger as agentwatch events | CUJ-14 | M7 | event-join test (C-06); SOC rule fires on `halt.*` | Delivered, superseded (P18) |
+| **R7** | Pause/resume (+ basic quarantine), 24 h integrity | CUJ-4 | M9 | drill `pause-ttl` · 24 h leg (nightly + release candidate) | New |
+| **R8** | Halt store + dual choke + fail-closed | CUJ-16 | M1 (fuzz matrix M11) | `test_failclosed_store` · fuzzed failure matrix · drill `store-down` | Inverted (P10) |
+| **R9** | Lineage registry (append-only edges) + enrollment | CUJ-3 | M2 (enrollment CLI M0) | `test_edges_append_only` · `test_forged_edge_rejected` · `test_conflict_priority` · drill `edge-forgery` | New |
+| **R10** | Proof-of-stop receipt (confirmations) | CUJ-9 | M4 (signing), M6 | `test_receipt_verify` · `prove` goldens · drill `receipt-tamper` | New (P5) |
+| **R11** | The 09:01 readout | CUJ-10 | M6 | golden receipts ([PRD 26](26-receipt-schema-and-examples.md)) incl. `readout.coverage` | Re-scoped (P14) |
+| **R12** | Tamper-evident halt journal | CUJ-9, CUJ-14 | M0, M7 | `test_journal_tamper` · `test_journal_degrade` · `journal verify` | Delivered, extended (P5) |
+| **R13** | Irreversibility honesty (compensation list) | CUJ-17 | M6 | golden receipts: compensation present, `reversible: false` | New (the honesty rule) |
+| **R14** | CI chaos drill (measured; survivor = fail) | CUJ-15 | M10 | full 12-case catalogue per platform; survivor gate fails the build | New |
+| **R15** | Graduated escalation (escalate-on-act) | CUJ-18 | v0.2.0 — not in the v0.1.0 WBS | escalate-on-act tests | New (v0.2.0) |
+| **R16** | External dead-man switches (budget/kernel; `ai-loopguard` triggers) | CUJ-19, CUJ-20 | v0.2.0 (self-tamper subset: M1, M2, M8 — DD-36) | each trigger fires with a distinct `reason_code`; drill `fleet-drill` | Delivered, re-pointed (P1, P2) |
+| **R17** | Drills-in-a-box (partner runbooks) | CUJ-15 | v0.2.0 | non-author runs the drill; pass/fail + time | New (v0.2.0) |
+| **R18** | Halt authorization (RBAC, dual control, break-glass) | CUJ-21 | v0.2.0 | `test_authz_dualcontrol` | Delegated gate (P9) |
+| **R19** | Third-party/SaaS agent coverage | CUJ-22 | v0.2.0 | per-agent coverage recorded; limits stated | New (v0.2.0) |
+| **R20** | Blast map | CUJ-23 | v0.2.0 | residuals named with windows | New (v0.2.0) |
+| **R21** | Offline evidence bundle | CUJ-24 | v0.2.0 | third party verifies without agenthalt installed | New (v0.2.0) |
+| **R22** | Halt-from-anywhere (Slack + agentinbox mobile) | CUJ-25 | v0.2.0 | channel + principal journaled; anti-spoofing applies | New (v0.2.0) |
+| **R23** | Fleet halt policies ("auto-quarantine X") | later | v0.3.0 | policy match raises a halt with rule id | New (v0.3.0) |
+| **R24** | External halt attestation | later | v0.3.0 | signed third-party drill result attachable | New (v0.3.0) |
 
 ## CUJ → requirement (reverse)
 
@@ -85,14 +88,20 @@ builds on.
 | DD-09 agentwatch event, no new protocol | R6 |
 | DD-10 snapshot before termination | R3 |
 | DD-11 irreversibility stated | R13 |
-| DD-13 kill first, modes v0.2.0 | R15, R7 |
-| DD-14 dead-man v0.2.0 | R16 |
+| DD-13 rungs at v0.1.0, graduation v0.2.0 | R7, R15 |
+| DD-14 external dead-man v0.2.0 | R16 |
 | DD-22 ≤1 s measured | R1, R14 |
 | DD-24 append-only edges | R9 |
 | DD-32 drill is release-blocking | R14 |
+| DD-36 self-tamper triggers at v0.1.0 | R5, R8, R9 (WBS 1.6, 2.6, 8.2) |
+| DD-37 pause TTL 24 h | R7 |
+| DD-38 enrollment | R9, R2 |
+| DD-39 status precedence | R10 |
+| DD-40 self-attestation labelled | R10 |
 
-## WBS (to be authored)
+## WBS
 
-The work breakdown will live at [`docs/wbs/v0.1.0/`](../wbs/v0.1.0/README.md) — the milestones above (M0–M10)
-are the PRD-side proposal; the authored WBS is the operational source of truth and supersedes the milestone
-column. Open decisions still to resolve are listed in [PRD 21](21-evidence-register-and-method.md) §PRD tensions.
+The authored WBS lives at [`docs/wbs/v0.1.0/`](../wbs/v0.1.0/wbs-v0.1.0-index.md) (M0–M13). It is the operational
+source of truth for milestones; this document is the requirement-side source of truth, and the milestone column
+above is kept in sync with it. Open decisions are tracked in [PRD 21](21-evidence-register-and-method.md)
+§Open decisions register. Risk → milestone and claim → milestone maps live in the WBS index.

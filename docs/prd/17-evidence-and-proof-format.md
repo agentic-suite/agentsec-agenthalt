@@ -55,7 +55,9 @@ The receipt is the answer to *"did the stop actually stop it?"* — built **only
 
 **Status vocabulary:** `complete` (all members confirmed, no survivors) · `incomplete` (survivors or
 unconfirmed members — the receipt says which) · `partial-layer` where a composed layer was `unsupported`
-(e.g. agentgate not deployed — DD-18). There is **no** status that means "probably stopped."
+(e.g. agentgate not deployed — DD-18) · `failed` (blocking never established). When several apply, the worst
+wins: `failed` > `incomplete` > `partial-layer` > `complete` (DD-39, [PRD 26](26-receipt-schema-and-examples.md)).
+There is **no** status that means "probably stopped."
 
 ## Offline verification (CUJ-24)
 

@@ -74,6 +74,10 @@ authorization state.
    with post-halt refused-call activity).
 5. **Evidence exfiltration** (A4 → snapshot): the snapshot is a map of the incident, redacted by default and
    access-controlled; *residual:* retention window trade-off (configurable).
+6. **Remote listener abuse** (A4 → `haltd` webhook/PagerDuty/Slack endpoints): a network-facing control plane.
+   Localhost bind by default; remote listeners opt-in, authenticated, rate-limited, capped at `max_scope: agent`;
+   a listener crash never affects local halts or the choke. *Residual:* a stolen HMAC key can halt agents in its
+   scope until rotation (journaled, `lift`-able) (RK-24).
 
 ## Mitigation → test mapping (every mitigation is a shipped test)
 

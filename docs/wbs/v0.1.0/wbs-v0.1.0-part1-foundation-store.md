@@ -26,12 +26,12 @@ depend on them forever ([PRD 37](../../prd/37-cli-and-output-ux-spec.md), Tier-0
 
 | # | Task | Description | Deliverable | Acceptance | Issue | CUJ | Req |
 |---|---|---|---|---|---|---|---|
-| 0.D0 | **Design docs first** | Foundation design: CLI surface, config model, exit-code contract, journal chain format, `doctor` semantics | docs | reviewed before code | #399 | — | — |
+| 0.D0 | **Design docs first** | Foundation design: CLI surface (incl. `run`/`attach`), config model, exit-code contract + precedence, journal chain format, `doctor` semantics | docs | reviewed before code | #399 | — | — |
 | 0.1 | Scaffold & identity | `pyproject.toml` for `agenthalt` / `agentsec-agenthalt`, CLI entry point, `make setup`/`lint`/`typecheck`/`test`/`cov`; README/LICENSE/CODEOWNERS/SECURITY finalized | packaging | `pip install -e .` works; `make setup` green | #400 | — | — |
-| 0.2 | CLI framework + subcommands | Full command surface (`halt`/`pause`/`quarantine`/`kill`/`resume`/`escalate`/`lift`/`status`/`prove`/`drill`/`journal`/`evidence`/`doctor`/`runbook`) with **reserved exit codes 0–5** | CLI | `agenthalt --help` lists commands; exit codes reserved + documented | #401 | — | — |
+| 0.2 | CLI framework + subcommands | Full command surface (`run`/`attach`/`halt`/`pause`/`quarantine`/`kill`/`resume`/`escalate`/`lift`/`status`/`prove`/`drill`/`journal`/`evidence`/`doctor`/`runbook`) with **reserved exit codes 0–5** and the DD-39 precedence (`3` > `1` > `2` > `0`) | CLI | `agenthalt --help` lists commands; exit codes reserved + documented | #401 | — | — |
 | 0.3 | Configuration model | Precedence **flags > `AGENTHALT_*` env > config file > defaults**; schema-validated; **fail-closed** on invalid config (exit 5) | config loader | invalid config fails closed (exit 5); precedence tested | #402 | — | — |
 | 0.4 | **Halt journal** (append-only, hash-chained) | Entry model (`seq`/`prev_hash`/`entry_hash`/actor/scope/reason/mode/action), JSONL segments, **rotation anchor** committing the prior head | journal | chain verifies; a seeded edit is detected; rotation never breaks the chain | #403 | — | R12 |
-| 0.5 | `doctor` + structured logging | Environment/store/adapter preflight with a verdict; `--migrate` hook stub; structured JSON logs with `halt_id` correlation; no secrets at any level | CLI + logs | `doctor` reports a verdict; logs parse; redaction asserted | #404 | — | — |
+| 0.5 | `doctor` + structured logging | Environment/store/adapter preflight with a verdict; `--migrate` hook stub; structured JSON logs with `halt_id` correlation; no secrets at any level; platform checks: macOS Accessibility permission (panic key), Linux cgroup v2 delegation (enrollment), hook surface present/absent | CLI + logs | `doctor` reports a verdict; logs parse; redaction asserted; each platform check reports pass/fail with the fix | #404 | — | — |
 | 0.6 | CI & quality gate | `ruff` + `mypy --strict` + `pytest` + coverage ≥95% + DCO | GitHub Actions | CI green on PR | #405 | — | — |
 | 0.7 | Identity & governance docs | README/SECURITY finalized; PRD traceability wired; `.agenthalt/` layout documented | docs | docs match identity | #406 | — | — |
 | 0.T | Tests | Config fail-closed + precedence, CLI smoke, exit-code contract, journal chain + tamper detection, `doctor` verdict | tests | all new paths covered; coverage ≥ 95% | #407 | — | — |
@@ -47,6 +47,7 @@ depend on them forever ([PRD 37](../../prd/37-cli-and-output-ux-spec.md), Tier-0
 - [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
 - [ ] `agenthalt --help` lists the full command surface; exit codes 0–5 reserved and documented
 - [ ] Bad config fails closed (exit 5); the journal chain verifies and detects a seeded edit
+- [ ] Exit-code precedence `3` > `1` > `2` > `0` (DD-39) tested; `run`/`attach` reserved in the CLI
 
 ---
 
@@ -70,8 +71,8 @@ add the graph, the cuts, the evidence, and the proof.
 | 1.2 | **Runtime choke** | Read API the runtime calls before an action; **short-TTL cache (seconds, never minutes)**; local read inside the ≤50 ms budget | choke API | halt visible ≤ 50 ms; cache TTL enforced | #414 | — | R8 |
 | 1.3 | **Gateway choke interface** | Dual-choke abstraction; agentgate adapter **stub** that reports `unsupported` honestly until Wave 1 | interface + stub | gateway half reports unsupported, never silently skipped | #415 | — | R8 |
 | 1.4 | **Fail-closed semantics + reason codes** | Store unreachable / adapter failure / lineage gap → deny high-impact actions with `halt_store_unavailable`/`adapter_failed`/`lineage_gap` | reason-code registry | every failure path denies; distinct codes | #416 | CUJ-16 | R8 |
-| 1.5 | Idempotency & scope composition | Re-raising the same halt returns the existing receipt (no-op); concurrent different halts compose (tighter scope wins within its subtree) | coordinator logic | duplicate ⇒ idempotent; concurrent ⇒ no corruption | #417 | — | R8 |
-| 1.6 | Store health + `status` skeleton | Store health signal + `agenthalt status` showing live halt state | CLI + health | status reports live state; health surfaces store-down | #418 | — | R8 |
+| 1.5 | Idempotency & scope composition | Re-raising the same halt returns the existing receipt (no-op); concurrent different halts compose (tighter scope wins within its subtree); halt lifecycle `pending`/`blocking`/`executing`/`finished`/`lifted`, with the outcome carried by the receipt status (PRD 15) | coordinator logic | duplicate ⇒ idempotent; concurrent ⇒ no corruption | #417 | — | R8 |
+| 1.6 | Store health + `status` skeleton | Store health + integrity signal (unreachable / truncated / head ≠ journal while a halt is armed), consumed by the `tamper_store` self-tamper trigger wired in 8.2 (DD-36); `agenthalt status` showing live halt state | CLI + health | status reports live state; health surfaces store-down; the integrity signal tells a restart from tampering | #418 | — | R8 |
 | 1.T | Tests | Store scopes/TTL, choke latency, cache-TTL enforcement, fail-closed fuzz matrix, idempotency, concurrent scopes | tests | all new paths covered; coverage ≥ 95% | #419 | — | — |
 | 1.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #420 | — | — |
 | 1.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #421 | — | — |
@@ -85,6 +86,7 @@ add the graph, the cuts, the evidence, and the proof.
 - [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
 - [ ] The halt store is the single source of stop truth; both chokes read it; cache TTL is seconds-scale
 - [ ] Every failure path is fail-closed with a distinct reason code; store-down ⇒ high-impact actions denied
+- [ ] The store integrity signal exists and is consumable by `tamper_store` (DD-36)
 
 ---
 

@@ -44,9 +44,9 @@ attributes* (who spawned whom), never whether the child exists. Duplicate edges 
 |---|---|
 | Two sources disagree on parentage | Process observation wins; disagreement is journaled as a `lineage_conflict` finding |
 | A child appears with no parent (orphan) | Adopts into an `orphans[]` watchlist; surfaced in the readout; **never silently killed** (wrong-direction collateral) and **never silently ignored** (survivor risk) |
-| An edge disappears (deletion attempt) | Append-only chain makes the deletion visible; the *attempt* is a dead-man trigger (PRD 06) |
+| An edge disappears (deletion attempt) | Append-only chain makes the deletion visible; the *attempt* is a self-tamper trigger (`tamper_lineage`, DD-36) |
 | An edge is forged (poisoning attempt) | Edge writes authenticate to the adapter identity; a forged edge fails validation; the attempt is journaled |
-| Process re-parenting (double-fork daemons) | The process adapter tracks process *groups/cgroups*, not just ppid — a double-fork stays in the subtree |
+| Process re-parenting (double-fork daemons) | **Linux:** cgroup membership is inescapable for unprivileged children, so a double-fork stays in the subtree. **macOS:** process groups are escapable (`setsid`); the enrollment supervisor adds ancestry polling + session/uid scoping, and a child that leaves the observed set is a `lineage_gap` finding. Containment there is best-effort until agentseatbelt (Endpoint Security) is deployed (RK-23) |
 | Spawn racing the halt | Halt-time subtree snapshot + the **post-halt spawn rule:** any member of a blocked scope that spawns is blocked by inheritance (the choke denies by scope, not by enumerated id) |
 
 ## The post-halt spawn rule (the race closer)
@@ -89,7 +89,7 @@ signal (a blocked run shouldn't be spawning).
 |---|---|
 | `test_edges_append_only` | deleted/reordered segments fail chain verification |
 | `test_forged_edge_rejected` | unauthenticated edge write is refused + journaled |
-| `test_double_fork_stays` | a daemonizing child is still contained |
+| `test_double_fork_stays` | a daemonizing child is still contained (Linux), or contained / reported as `lineage_gap` — never silent (macOS) |
 | `test_orphan_surfaced` | an orphaned run appears in `orphans[]` + readout, is not killed, is not ignored |
 | `test_spawn_race` | a child spawned mid-halt is choke-blocked by scope inheritance |
 | `test_conflict_priority` | process-observation parentage wins; conflict journaled |

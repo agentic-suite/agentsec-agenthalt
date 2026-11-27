@@ -1,7 +1,8 @@
 # PRD 07 — Success Metrics
 
 **BLUF:** agenthalt succeeds when an operator can **stop a live agent and prove it stopped** — one command,
-**≤ 1 second** from alert to full stop (process frozen, credentials dead, evidence written), **zero surviving
+**≤ 1 second** from alert to full stop (choke blocking, subtree suspended, revocable credentials confirmed dead,
+first evidence segment committed — [PRD 39](39-performance-budget.md)), **zero surviving
 descendants**, and a receipt a third party can verify. The headline metric is not "switch shipped" — it is
 **measured, CI-verified stop time and containment**, plus the adoption of the **drill** (a switch nobody has
 pulled is a label on a box). Anti-metrics: no false success, no rollback theater, no single-layer claims.
@@ -12,7 +13,7 @@ pulled is a label on a box). Anti-metrics: no false success, no rollback theater
 
 | Metric | Target | Why it is the right metric |
 |---|---|---|
-| Alert → full stop | **≤ 1 s** in the chaos drill (process frozen, creds dead, evidence written), measured in CI every release | The ecosystem's #1 success criterion (#216); "continuously verified, not just at launch" |
+| Alert → full stop | **≤ 1 s** in the chaos drill (the [PRD 39](39-performance-budget.md) clock: choke blocking, subtree suspended, revocable grants confirmed, first evidence segment committed), measured in CI every release | The ecosystem's #1 success criterion (#216); "continuously verified, not just at launch" |
 | Containment completeness | **zero surviving descendants** make a network call post-halt (verified in the drill) | Stop is a graph operation; the drill tests the graph, not the parent |
 | Stop-plan correctness | **100%** on the acceptance matrix (scope × mode × layer × failure injection) | A deterministic control plane — no "usually stops" |
 | Proof integrity | **100%** of halts return a receipt built from confirmations; an unconfirmed descendant reports `incomplete` | The category fudges with requests; agenthalt's differentiator is confirmations (R10) |
@@ -37,7 +38,8 @@ A release is not "done" unless:
 4. Every trigger path fires and is journaled (R4, CUJ-11/12).
 5. The hostile-harness fixture (hooks removed) is still contained (R5, CUJ-13).
 6. Halts + triggers are emitted in the agentwatch schema and join on a common id (R6, CUJ-14).
-7. Pause/resume survives the 24 h wall-clock test (R7, CUJ-4).
+7. Pause/resume survives the 24 h wall-clock test (R7, CUJ-4), run on the release candidate (and nightly), not
+   per PR.
 8. The halt store fail-closed contract holds under the fuzzed failure matrix (R8, CUJ-16).
 9. Every halt returns a receipt built from confirmations; an unconfirmed descendant reports `incomplete` (R10).
 10. The readout answers the 09:01 question with live grants, queued work, siblings, downstream (R11, CUJ-10).

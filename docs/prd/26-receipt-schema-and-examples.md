@@ -21,10 +21,11 @@ agenthalt.receipt.v1
 │   ├─ root         "<kind>:<id>"
 │   ├─ members[]    [{ id, kind: run|proc|mcp|agent, confirmed: bool }]
 │   ├─ grants[]     [credential refs held by members]
-│   └─ lineage_verified   bool        (false ⇒ receipt says so — never claims completeness)
+│   ├─ lineage_verified   bool        (false ⇒ receipt says so — never claims completeness)
+│   └─ survivor_probe     { method, observer, window_ms }  (what "no call observed" was observed by)
 ├─ confirmations[]  [{ layer: process|credentials|gateway|sandbox|hooks,
 │                       target, status: confirmed|requested|unsupported|failed,
-│                       signed_by, signature, note? }]
+│                       signed_by, signature, attestation: third_party|self, note? }]
 ├─ refused_calls    { count, first_at, last_at, log_ref }    (written by enforcement points)
 ├─ survivors[]      [{ id, last_seen, why }]                (non-empty ⇒ status=incomplete)
 ├─ compensation[]   [{ kind, ref, observed_at, reversible: false }]   (always false at v1)
@@ -33,7 +34,8 @@ agenthalt.receipt.v1
 │   ├─ queued_work[]         [refs the stopped agent had claimed]
 │   ├─ siblings[]            [agents outside the subtree]
 │   ├─ downstream[]          [agents the stopped agent handed work to]
-│   └─ uncovered_routes[]    [network paths no composed layer reaches]
+│   ├─ uncovered_routes[]    [network paths no composed layer reaches]
+│   └─ coverage{}            [per-field source: agentwatch|lineage|agentkeys|unavailable]
 ├─ evidence         { snapshot_ref, chain_head, status: written|pending|failed }
 ├─ mode_history[]   [{ at, mode, actor? }]                   (pause→quarantine→kill timeline)
 ├─ verifier_input   { journal_head, adapter_versions{}, halt_ref, trigger_ref, receipt_hash }
@@ -50,6 +52,13 @@ agenthalt.receipt.v1
   version and a forbidden-claim review ([PRD 20](20-standards-and-claims.md) §F).
 - `readout.uncovered_routes` is mandatory honesty (E5/E8): what the stop did *not* reach is named, never
   omitted.
+- `readout.coverage` states where each readout field came from. A field whose source is `unavailable` (e.g. no
+  agentwatch) is *unknown*, not empty; an empty list only ever means a measured empty.
+- `confirmations[].attestation: self` marks a cut performed and signed by agenthalt's own OS executor (no
+  agentseatbelt/agentkernel); the verifier reports it distinctly (DD-40). A confirmation with `signed_by: null`
+  can never have `status: confirmed`.
+- `subtree.survivor_probe` records how survivors were looked for; `survivors: []` is only as strong as its
+  observer.
 
 ## Status vocabulary (exhaustive)
 
@@ -61,6 +70,10 @@ agenthalt.receipt.v1
 | `failed` | the halt could not establish blocking at the choke | `VERIFIED (failed)` — plus the manual-fallback runbook pointer |
 
 There is deliberately **no** status meaning "probably stopped," and no way to express success from requests.
+
+**Precedence (DD-39):** when several apply, the worst true status wins — `failed` > `incomplete` >
+`partial-layer` > `complete`. A halt with a survivor *and* a missing gateway is `incomplete`; the `unsupported`
+layer is still listed in `confirmations[]`.
 
 ## Example 1 — the clean kill (Demo 1)
 
@@ -74,7 +87,8 @@ There is deliberately **no** status meaning "probably stopped," and no way to ex
   "confirmations": [
     { "layer": "process", "target": "run_a1", "status": "confirmed", "signed_by": "agentseatbelt" },
     { "layer": "credentials", "target": "grant:aws-deploy", "status": "confirmed", "signed_by": "agentkeys" },
-    { "layer": "sandbox", "target": "run_a1", "status": "confirmed", "signed_by": "agentseatbelt" } ],
+    { "layer": "sandbox", "target": "run_a1", "status": "confirmed", "signed_by": "agentseatbelt" },
+    { "layer": "gateway", "target": "run_a1", "status": "confirmed", "signed_by": "agentgate" } ],
   "refused_calls": { "count": 3, "first_at": "…T02:31:07Z", "last_at": "…T02:31:09Z", "log_ref": "evt_9" },
   "survivors": [],
   "compensation": [ { "kind": "record_written", "ref": "db:customers#8823", "reversible": false } ],

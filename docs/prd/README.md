@@ -28,7 +28,7 @@ every layer the ecosystem owns (process tree, credentials, MCP gateway, sandbox)
 | 08 | [Risks](08-risks.md) | Risk register (RK-1..RK-22), hard parts, triggers to revisit, open questions |
 | 09 | [Roadmap](09-roadmap.md) | Versions, compatibility by version, migration/deprecation, release cadence, ecosystem dependency |
 | 10 | [Feature Parity](10-feature-parity.md) | Every absorbed `ai-loopguard` / BehaviorGuard capability → delivered / delegated / waived; the documented fail-open→fail-closed inversion |
-| 11 | [Decisions](11-decisions.md) | Accepted decisions (DD-01..DD-35: design, scope, technical, governance) |
+| 11 | [Decisions](11-decisions.md) | Accepted decisions (DD-01..DD-40: design, scope, technical, governance) |
 | 12 | [Traceability](12-traceability.md) | Requirements → CUJ → WBS → test → parity; reverse CUJ map; decisions → requirements |
 | 13 | [Non-Functional Requirements](13-non-functional-requirements.md) | Speed (≤1 s), determinism, fail-closed safety, portability, security, auditability, cost, observability |
 | 14 | [Non-Goals](14-non-goals.md) | Consolidated non-goals with owners; what agenthalt is *not* claiming |
@@ -48,7 +48,7 @@ every layer the ecosystem owns (process tree, credentials, MCP gateway, sandbox)
 | 28 | [Failure-Mode Runbook](28-failure-mode-runbook.md) | The operator's survival doc: symptom→action per failure, manual per-layer fallbacks, escalation tree, post-incident checklist |
 | 29 | [Regulatory Crosswalk](29-regulatory-crosswalk.md) | Clause→capability→artifact mappings for H.R. 9917, NCSC, EU AI Act Art. 12/14, CA EO, ISO 42001, NIST AI RMF; allowed vs forbidden claims |
 | 30 | [Threat Model](30-threat-model.md) | Trust boundaries, five threat actors, STRIDE matrix, ranked attack paths, mitigation→test mapping, residual risks |
-| 31 | [Claims Ledger](31-claims-ledger.md) | Machine-checkable claim registry (C-01..C-12), forbidden list (F-01..F-08), linter rules, miss-handling SLA |
+| 31 | [Claims Ledger](31-claims-ledger.md) | **Canonical** machine-checkable claim registry (C-01..C-12), forbidden list (F-01..F-08), linter rules, miss-handling SLA |
 | 32 | [Build vs Integrate](32-build-vs-integrate.md) | The six owned components, the integrated surfaces per layer, what we never build, boundary-blur guardrails |
 | 33 | [Competitive Battlecard](33-competitive-battlecard.md) | Per-competitor cards (CrowdStrike, Okta, Zenity, Tigera, Aembit/Grip, Salesforce/JetStream, OSS breakers) with their own words, wins/losses, closes-by |
 | 34 | [Design-Partner Evaluation Guide](34-design-partner-evaluation-guide.md) | The one-week eval kit: day-by-day plan, ten questions, evidence to demand, miss reporting, blocker-vs-feature classification |

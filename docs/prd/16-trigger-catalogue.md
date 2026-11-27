@@ -2,9 +2,9 @@
 
 **BLUF:** A **trigger** is the authenticated way a halt is raised. agenthalt ships **five launch triggers** —
 CLI, alert webhook, PagerDuty button, Slack action, keyboard **panic key** — each tested in drills, each
-journaled with actor + channel + reason. v0.2.0 adds the **dead-man switches** (the absorbed `ai-loopguard`
-trigger class): budget exhaustion, tamper detection, kernel kill triggers — deterministic conditions, never
-judgments. Every trigger authenticates; the switch is a weapon and entry security is not optional.
+journaled with actor + channel + reason. v0.1.0 also ships the **self-tamper triggers** that fire when the stop
+itself is attacked (DD-36). v0.2.0 adds the external **dead-man switches** (the absorbed `ai-loopguard` trigger
+class): budget exhaustion, policy tamper, kernel kill triggers — deterministic conditions, never judgments. Every trigger authenticates; the switch is a weapon and entry security is not optional.
 
 **Status:** Draft — v0.1.0 (2026-11-14) · **Owner:** @deghosal-2026 · **Parent:** agentic-suite #209 · PRD #216
 
@@ -45,10 +45,24 @@ triggers:
 | **Alert webhook** | A SIEM/agentwatch/agentpolicy alert POSTs a signed halt request | `agent` / `pause` (escalatable) | HMAC signature, ±5 min replay window, per-source rate limit | CUJ-11 |
 | **PagerDuty button** | The on-call clicks the incident's halt action | `agent` (bound to the incident's agent) / `kill` | PagerDuty token + incident linkage | CUJ-11 |
 | **Slack action** | An authorized user clicks Halt in the incident channel | `agent` / `pause` | Slack signature + principal; RBAC scope (R18 at v0.2.0; agentinbox anti-spoofing) | CUJ-11, CUJ-25 |
-| **Keyboard panic key** | Sam hits the key while an agent runs | the **active local agent** / `kill` | Interactive session only; a non-interactive invocation is rejected + journaled; no-op when no agent is active | CUJ-12 |
+| **Keyboard panic key** | Sam hits the key while an agent runs | the **active local agent** (the most recently started enrolled run of the session user; `doctor` shows which) / `kill` | Interactive session only (macOS: the console user's GUI session, which needs the Accessibility permission for the global hotkey, checked by `doctor`; Linux: the active seat's session); a non-interactive invocation is rejected + journaled; no-op when no agent is active | CUJ-12 |
 
 Acceptance per trigger (R4): it fires in the drill, authenticates, journals actor + channel + reason, and is
 idempotent — a duplicate returns the existing receipt.
+
+## Self-tamper triggers (v0.1.0) — attacks on the stop itself (DD-36)
+
+Raised by agenthalt's own integrity checks, inside trust boundary 2 ([PRD 30](30-threat-model.md)). They need no
+external producer and do not depend on R18.
+
+| Trigger | Condition | Default mode | Reason code |
+|---|---|---|---|
+| **Store suppression** | The halt store becomes unreachable, is truncated, or its head stops matching the journal while a halt is armed | `quarantine` on the affected scope, executed through the process/sandbox layers (the choke is already fail-closed) | `tamper_store` |
+| **Hook removal / config drift** | A registered hook or harness-config hash changes under an enrolled run | `quarantine` | `tamper_hooks` |
+| **Lineage-edge deletion** | A lineage segment fails chain verification or an edge disappears | `quarantine` on the affected subtree | `tamper_lineage` |
+
+Each is journaled with the tampered artifact's identity. A false positive is lifted with `agenthalt lift` like
+any other halt.
 
 ## Dead-man switches (v0.2.0) — the absorbed `ai-loopguard` trigger class
 
@@ -58,7 +72,7 @@ Deterministic conditions from authenticated ecosystem sources; **conditions, not
 | Dead-man | Condition | Source | Default mode | Reason code | Origin |
 |---|---|---|---|---|---|
 | **Budget exhaustion** | A session exhausts an agentpolicy blast-radius budget (files/requests/spend/calls) | agentpolicy | `pause` → escalate on act (hard ceilings → `kill`) | `budget_exhausted` | `ai-loopguard` session budget cap (P16); agentpolicy PRD 18 |
-| **Tamper — hooks** | The agent's hooks/harness config hash changes under it | agentwatch / file watcher | `quarantine` | `tamper_hooks` | The H.R. 9917 incident definition (shutdown sabotage); R5/R16 |
+| **Tamper — hooks** *(ships v0.1.0 — see §Self-tamper)* | The agent's hooks/harness config hash changes under it | agentwatch / file watcher | `quarantine` | `tamper_hooks` | The H.R. 9917 incident definition (shutdown sabotage); R5/R16 |
 | **Tamper — policy/config** | A policy or agenthalt config hash mismatches the pinned version | agentpolicy / self | `quarantine` | `tamper_policy` | — |
 | **Kernel kill trigger** | agentkernel's eBPF containment raises a kill event | agentkernel (Wave 2) | `kill` | `kernel_kill` | PRD #216 R9 |
 | **Stuck loop** (v0.3.0, stretch) | Repeated-identical-error / test-failure-loop / schema-invalid patterns sustained | loopguard-style detector (explicit, configured) | `pause` | `stuck_loop` | `ai-loopguard` FailureDetector vocabulary (P1/P2) |

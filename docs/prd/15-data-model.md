@@ -12,7 +12,7 @@ offline-verifiable; local state lives under `.agenthalt/`; every mutation of the
 | Entity | Definition | Key fields |
 |---|---|---|
 | **Trigger** | The authenticated raise of a halt | `trigger_id`, `source` (`cli`/`webhook`/`pagerduty`/`slack`/`panic_key`/`dead_man`/`drill`), `principal`, `channel`, `reason`, `reason_code?`, `signature` |
-| **Halt** | The resolved stop request | `halt_id`, `target` (`agent`/`session`/`run`/`subtree`/`all`), `mode` (`pause`/`quarantine`/`kill`), `status` (`pending`/`blocking`/`executing`/`complete`/`incomplete`/`lifted`), `trigger_id`, `deadline_ms`, `created_at` |
+| **Halt** | The resolved stop request | `halt_id`, `target` (`agent`/`session`/`run`/`subtree`/`all`), `mode` (`pause`/`quarantine`/`kill`), `status` (lifecycle: `pending`/`blocking`/`executing`/`finished`/`lifted`; the *outcome* of a finished halt is the receipt status `complete`/`incomplete`/`partial-layer`/`failed`, [PRD 26](26-receipt-schema-and-examples.md)), `trigger_id`, `deadline_ms`, `created_at` |
 | **HaltState** | The authoritative kill state (the store) | `scope`, `mode`, `halt_id`, `set_at`, `ttl?`, `cache_ttl` |
 | **LineageEdge** | A parent→child spawn record | `parent_run`, `child_run`, `spawn_source` (`hook`/`process`/`runtime`), `recorded_at`, `chain_hash` |
 | **Subtree** | The resolved target graph | `root`, `members[]` (run ids), `grants[]` (credential refs held by members) |
@@ -103,7 +103,8 @@ offline-verifiable; local state lives under `.agenthalt/`; every mutation of the
    destruction completes) and hash-chained.
 7. **Emit** — the halt (+ trigger) is emitted as agentwatch events; refused calls log to the event stream.
 8. **Receipt** — the **Receipt** is built from confirmations only; `survivors[]` non-empty ⇒ status
-   `incomplete`; the **readout** and **compensation[]** complete it; journaled as `complete`/`incomplete`.
+   `incomplete`; the **readout** and **compensation[]** complete it; journaled as `finished` with the receipt status (`complete`/`incomplete`/`partial-layer`/`failed`, precedence
+   per DD-39).
 9. **Resume/lift** (pause mode / operator action) — a journaled state change with its own actor and reason;
    pause expiry auto-escalates to kill (RK-15).
 

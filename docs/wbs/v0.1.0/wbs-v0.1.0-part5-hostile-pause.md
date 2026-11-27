@@ -25,13 +25,13 @@ M10's drill turns into a release gate.
 
 | # | Task | Description | Deliverable | Acceptance | Issue | CUJ | Req |
 |---|---|---|---|---|---|---|---|
-| 8.D0 | **Design docs first** | Hook-as-accelerant design, tamper-detection triggers, hostile-harness fixture, survivor-detector spec | docs | reviewed before code | #496 | — | — |
+| 8.D0 | **Design docs first** | Hook-as-accelerant design, the three self-tamper triggers, hostile-harness fixture, survivor-detector spec; closes open decision #12 (survivor-probe method per platform) | docs | reviewed before code | #496 | — | — |
 | 8.1 | Hook adapter (optional, annotation only) | Stop/PreToolUse hooks where present; richer lineage/graceful stop; **never load-bearing** (asserted) | adapter | hook present ⇒ richer; hook absent ⇒ identical containment | #497 | — | R5 |
-| 8.2 | Hook-removal tamper detection → dead-man | Hook/config hash mismatch ⇒ tamper finding ⇒ dead-man trigger fires the stop | detection | tamper fires a halt with a distinct reason_code | #498 | — | R5 |
+| 8.2 | **Self-tamper triggers** (DD-36, ADR-0010) | Hook/config hash mismatch ⇒ `tamper_hooks`; store suppression ⇒ `tamper_store`; lineage-edge deletion (from 2.6) ⇒ `tamper_lineage`; each raises a `quarantine` halt | triggers | each tamper fires a halt with its distinct reason_code; `lift` clears a false positive | #498 | — | R5 |
 | 8.3 | **Hostile-harness fixture** | Harness with hooks removed (optionally lying); adversarial (ignores stop messages) | fixture | fixture runs; hooks absent confirmed by `doctor` | #499 | CUJ-13 | R5 |
 | 8.4 | Zero-hook containment end-to-end | Full halt against the hostile fixture via process/credential/sandbox layers | test + demo leg | full containment with zero hooks; Demo 2 passes | #500 | CUJ-13 | R5 |
-| 8.5 | **Survivor detector** | Post-halt network-call probe (any descendant making a call ⇒ survivor) | detector | detects a seeded survivor; reports zero on a clean halt | #501 | — | R5 |
-| 8.T | Tests | Hook-accelerant equivalence, tamper trigger, hostile fixture containment, survivor detection | tests | all new paths covered; coverage ≥ 95% | #502 | — | — |
+| 8.5 | **Survivor detector** | Post-halt probe: member liveness + egress observation (any descendant making a call ⇒ survivor); method and observer recorded in `subtree.survivor_probe` | detector | detects a seeded survivor; reports zero on a clean halt | #501 | — | R5 |
+| 8.T | Tests | Hook-accelerant equivalence, self-tamper triggers (hooks/store/lineage), hostile fixture containment, survivor detection | tests | all new paths covered; coverage ≥ 95% | #502 | — | — |
 | 8.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #503 | — | — |
 | 8.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #504 | — | — |
 | 8.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #505 | — | — |
@@ -43,15 +43,16 @@ M10's drill turns into a release gate.
 
 - [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
 - [ ] With all hooks removed, a halt still fully contains the agent (Demo 2)
-- [ ] Hook removal is tamper detection → a dead-man trigger
+- [ ] Hook removal, store suppression and edge deletion each fire a self-tamper halt (DD-36)
 - [ ] The survivor detector reports zero on a clean halt and catches a seeded survivor
+- [ ] Every receipt names its survivor-probe method and observer
 
 ---
 
 ## Milestone M9 — Pause/resume & the mode engine
 
 **Goal:** the **mode engine** (the `pause → quarantine → kill` ladder as strict supersets) with **v0.1.0
-shipping `pause` + `kill`** (quarantine escalations fully at v0.2.0 — DD-13), **pause/resume** with full-context
+shipping all three rungs as explicit commands** (escalate-on-act lands v0.2.0 — DD-13), **pause/resume** with full-context
 restoration and the **24 h wall-clock test** (R7), the **paused-run registry** with a max-TTL that
 auto-escalates to kill (RK-15), and **escalate** + mode history in the journal.
 
@@ -66,11 +67,11 @@ auto-escalates to kill (RK-15), and **escalate** + mode history in the journal.
 | 9.D0 | **Design docs first** | Mode-ladder semantics (supersets), pause/resume state model, TTL/expiry, escalate, mode history | docs | reviewed before code | #507 | — | — |
 | 9.1 | **Mode engine** | `pause`/`quarantine`/`kill` as strict supersets; mode recorded in the store; choke enforces ≥ blocking at every rung | engine | superset property tested; mode in store | #508 | — | R7 |
 | 9.2 | **Pause executor** | SIGSTOP / cgroup freeze; session state, handles, sandbox preserved (not terminated) | executor | subtree frozen; state intact | #509 | CUJ-4 | R7 |
-| 9.3 | **Resume + paused-run registry + TTL** | Full-context resume; registry lists paused runs; **max-TTL default 24 h → auto-escalate to kill** with `pause_expired` | resume + registry | resume restores context; expiry escalates | #510 | CUJ-4 | R7 |
+| 9.3 | **Resume + paused-run registry + TTL** | Full-context resume; registry lists paused runs; **max-TTL default 24 h → auto-escalate to kill** with `pause_expired` (DD-37) | resume + registry | resume restores context; expiry escalates | #510 | CUJ-4 | R7 |
 | 9.4 | Escalate + mode history | One command up the ladder; journaled; the receipt shows the mode timeline | CLI + journal | escalate is one command; history reconstructable | #511 | — | R7 |
-| 9.5 | Quarantine (network cut + credential freeze) | Pause + egress cut + no new credential issuance (full escalation semantics land v0.2.0) | executor | quarantine cuts network; issuance frozen | #512 | — | R7 |
+| 9.5 | Quarantine (network cut + credential freeze) | Pause + egress cut + no new credential issuance (escalate-on-act lands v0.2.0, DD-13) | executor | quarantine cuts network; issuance frozen | #512 | — | R7 |
 | 9.6 | Pause-aware choke + resume preconditions | A paused scope still blocks new actions (no bypass); resume preconditions documented | choke + docs | paused run cannot act; resume safe | #513 | — | R7 |
-| 9.T | Tests | Superset property, freeze/resume integrity, **24 h wall-clock**, TTL expiry→kill, escalate, mode history | tests | all new paths covered; coverage ≥ 95% | #514 | — | — |
+| 9.T | Tests | Superset property, freeze/resume integrity, **24 h wall-clock** (nightly + release candidate, not per PR), TTL expiry→kill, escalate, mode history | tests | all new paths covered; coverage ≥ 95% | #514 | — | — |
 | 9.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #515 | — | — |
 | 9.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #516 | — | — |
 | 9.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #517 | — | — |

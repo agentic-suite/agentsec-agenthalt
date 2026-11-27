@@ -19,7 +19,7 @@ shutdown mechanism"—is, read as an engineering requirement, a demand for (d).
 **The halt store is the single source of stop truth and lives entirely outside the model's control plane.** The
 agent never reads-modify-writes its own stop; enforcement points below the harness (process, credential,
 gateway, sandbox) consult the store. The store accepts writes only from authenticated triggers and adapters
-([PRD 06](../prd/06-security-baseline.md)); suppression attempts are themselves dead-man triggers.
+([PRD 06](../prd/06-security-baseline.md)); suppression attempts are themselves self-tamper triggers (`tamper_store`, ADR-0010).
 
 ## Consequences
 

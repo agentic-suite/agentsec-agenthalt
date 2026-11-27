@@ -18,7 +18,8 @@ but reported nothing reports `requested`; a target unconfirmed at the deadline a
 **forces** `status=incomplete` — a schema-level invariant, not a UI choice. The status vocabulary is exhaustive
 (`complete` / `incomplete` / `partial-layer` / `failed`) and contains **no state meaning "probably stopped."**
 Confirmation entries are signed by the enforcement point that produced them and re-derivable offline
-([PRD 17](../prd/17-evidence-and-proof-format.md)).
+([PRD 17](../prd/17-evidence-and-proof-format.md)). Status precedence and labelled self-attestation are
+fixed in ADR-0011.
 
 ## Consequences
 

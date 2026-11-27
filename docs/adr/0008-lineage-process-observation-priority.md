@@ -18,7 +18,7 @@ orphan, or a lying hook each produce contradictory edges.
 enters the graph (union — a child any source saw is a child we track), but when sources disagree on parentage,
 the process-observed edge is authoritative, and the disagreement is journaled as a `lineage_conflict` finding.
 All edge writes authenticate to the adapter identity and are append-only + hash-chained; deletion attempts are
-themselves dead-man triggers ([PRD 06](../prd/06-security-baseline.md)).
+themselves self-tamper triggers (`tamper_lineage`, ADR-0010; [PRD 06](../prd/06-security-baseline.md)).
 
 ## Consequences
 
@@ -29,5 +29,7 @@ themselves dead-man triggers ([PRD 06](../prd/06-security-baseline.md)).
 - Honest costs: process observation is best-effort at the edges (unobserved spawn surfaces → orphan watchlist,
   `uncovered_routes`, drill survivor detection); enumerations remain bounded by the halt deadline, never a
   hang ([PRD 27](../prd/27-lineage-model.md) `test_enumeration_flood`).
+- On macOS, process groups are escapable (`setsid`); the enrollment supervisor (ADR-0009) adds ancestry
+  polling, and an escaped child is a `lineage_gap` finding, never a silent loss (RK-23).
 - The conflict cases are first-class drill/test cases (`edge-forgery`, `test_double_fork_stays`,
   `test_conflict_priority`) — this ADR's priority rule is CI-enforced, not documented aspiration.

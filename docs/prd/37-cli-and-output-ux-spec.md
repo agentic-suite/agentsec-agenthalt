@@ -13,6 +13,8 @@ next — and it never fakes a success.*
 
 | Command | Purpose | Key flags |
 |---|---|---|
+| `agenthalt run` | Launch an agent under the enrollment supervisor (owns its process group/cgroup; records the lineage root — DD-38) | `--name`, `-- <cmd>` |
+| `agenthalt attach` | Enroll an already-running agent, best-effort (`lineage_verified: false` until a full walk succeeds) | `--pid`, `--name` |
 | `agenthalt halt` | Raise a halt (mode via flag or shortcut) | `--agent\|--session\|--run\|--all`, `--mode`, `--reason` (required for `kill`/`--all`), `--deadline-ms`, `--json`, `--yes` |
 | `agenthalt pause` / `quarantine` / `kill` | Mode shortcuts for the ladder ([PRD 18](18-stop-modes.md)) | same as `halt` |
 | `agenthalt resume` | Resume a paused run | `--halt <id>` (prints the readout as a warning) |
@@ -23,7 +25,7 @@ next — and it never fakes a success.*
 | `agenthalt drill` | Run the rehearsal | `--case <name>`, `--platform <os>`, `--all`, `--json` |
 | `agenthalt journal` | `show\|verify` the halt journal | `--halt <id>`, `--segment` |
 | `agenthalt evidence` | `collect\|export\|verify` snapshots | `--halt <id>`, `--out` |
-| `agenthalt doctor` | Preflight sanity (run before you need it) | `--migrate`, `--verbose` |
+| `agenthalt doctor` | Preflight sanity (run before you need it), incl. platform checks: macOS Accessibility (panic key), Linux cgroup v2 delegation (enrollment), hook surface present/absent | `--migrate`, `--verbose` |
 | `agenthalt runbook` | Print the operator runbook section | `--section <n>` ([PRD 28](28-failure-mode-runbook.md)) |
 
 Naming: subcommands are verbs, flags are long-form only in docs (`-h/--help` excepted); config precedence is
@@ -41,6 +43,8 @@ Scripts, runbooks, and CI legs branch on these; they are **Tier-0 immutable** on
 | `3` | Halt **failed** — blocking never established | Pointer: `runbook --section 7` manual fallback |
 | `4` | Trigger **rejected** (auth/replay/scope-ceiling/non-interactive) | Journaled; never silently dropped |
 | `5` | Usage/config error | Nothing executed |
+
+When several outcomes apply, the exit code follows the receipt's status precedence (DD-39): `3` > `1` > `2` > `0`.
 
 `prove` extends the contract: `0` = `VERIFIED (complete)`, `1` = `VERIFIED (incomplete/partial/failed)` (the
 receipt is honest but not clean), `2` = `TAMPERED`. A runbook that says "&& echo fleet stopped" is only correct
