@@ -71,4 +71,5 @@ consumes them to raise a quarantine halt (ADR-0010); M1 does not raise a halt on
 
 The agent usually runs as the same OS user as agenthalt, so it *could* open the file. M1 makes that detectable,
 not impossible: every change is committed to the hash-chained journal, so an out-of-band edit shows up as
-`head_mismatch`. Running agents under a separate OS user through enrollment (M2, ADR-0009) removes the access.
+`head_mismatch`. Running an agent under a separate OS user with `agenthalt run --user` (opt-in, needs `sudo`, DD-46) removes the
+access. Without it, the store and the lineage keys stay readable by the agent: detectable, not prevented.

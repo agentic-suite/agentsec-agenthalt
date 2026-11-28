@@ -19,6 +19,7 @@ from pathlib import Path
 
 from agenthalt.config import CONFIG_ENV, ENV_NAMES, Config, ConfigError
 from agenthalt.journal import Journal
+from agenthalt.lineage import LineageError, LineageRegistry
 
 __all__ = ["Check", "Probes", "format_checks", "run_checks", "verdict"]
 
@@ -223,6 +224,29 @@ def _store(cfg: Config | ConfigError) -> Check:
     return Check("store", "pass", f"ok · {count} active halt(s) · {health.detail}", "")
 
 
+def _lineage(cfg: Config | ConfigError) -> Check:
+    if isinstance(cfg, ConfigError):
+        return Check("lineage", "n/a", "config did not load", "")
+    journal = Journal(cfg.home, segment_max_entries=cfg.segment_max_entries)
+    registry = LineageRegistry(cfg.home, journal=journal)
+    fix = f"run `agenthalt status`; do not edit the lineage or journal ({RUNBOOK})"
+    try:
+        read = registry.read()
+    except (LineageError, OSError) as exc:
+        return Check("lineage", "fail", str(exc), fix)
+    if read.findings:
+        first = read.findings[0]
+        return Check(
+            "lineage",
+            "fail",
+            f"{len(read.findings)} tamper finding(s), first: {first.problem} at seq {first.seq}",
+            fix,
+        )
+    if not read.edges:
+        return Check("lineage", "pass", "no runs enrolled yet", "")
+    return Check("lineage", "pass", f"intact: {len(read.edges)} edge(s)", "")
+
+
 def _panic_key(p: Probes) -> Check:
     if p.platform != "darwin":
         return Check("panic_key", "n/a", "macOS-only check", "")
@@ -253,7 +277,7 @@ def _cgroup(p: Probes) -> Check:
         return Check(
             "cgroup",
             "warn",
-            "cgroup v2 present but your cgroup is not delegated",
+            "cgroup v2 present but your cgroup is not delegated (`agenthalt run` will refuse)",
             "run agents under `systemd-run --user --scope` or enable user delegation (M2)",
         )
     return Check("cgroup", "pass", "cgroup v2 with user delegation", "")
@@ -298,6 +322,7 @@ def run_checks(cfg: Config | ConfigError, probes: Probes) -> list[Check]:
         _home(cfg),
         _journal(cfg),
         _store(cfg),
+        _lineage(cfg),
         Check("adapters", "n/a", "executor adapters land in M3-M4", ""),
         _panic_key(probes),
         _cgroup(probes),

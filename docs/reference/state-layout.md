@@ -13,7 +13,10 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
   store/                    0700  the live halt state (M1)
     state.json              0600  active halts — see halt store
     .lock                   0600  serialises store writers
-  lineage/                        append-only lineage edge segments (M2)
+  lineage/                  0700  append-only lineage edge segments (M2)
+    seg-000001.jsonl        0600  hash-chained, authenticated records
+    .lock                   0600  serialises lineage writers
+  keys/lineage/             0700  one HMAC key per lineage adapter (M2)
   halts/<halt_id>/                halt, subtree, stop plan, executions, confirmations (M3-M6)
   receipts/<halt_id>.json         proof-of-stop receipts, offline-verifiable (M6)
   evidence/<halt_id>/             redacted evidence snapshots (M5)
@@ -21,7 +24,7 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
   logs/                           structured logs, when log output goes to a file
 ```
 
-`journal/` and `store/` exist in this build; the other directories are created by the milestone that owns them.
+`journal/`, `store/`, `lineage/` and `keys/` exist in this build; the other directories are created by the milestone that owns them.
 
 ## Rules
 

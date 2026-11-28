@@ -16,7 +16,7 @@ A segment rotates after `journal.segment_max_entries` entries (default 10000).
 | `schema` | `"agenthalt.journal.v1"` | |
 | `seq` | int | 1, 2, 3… global across segments |
 | `timestamp` | string | RFC 3339 UTC, millisecond precision, e.g. `2026-11-27T02:31:05.123Z` |
-| `action` | string | `raise`, `execute`, `complete`, `lift`, `resume`, `escalate`, `trigger_rejected`, `finding`, `anchor` |
+| `action` | string | `raise`, `execute`, `complete`, `lift`, `resume`, `escalate`, `trigger_rejected`, `finding`, `lineage` (a checkpoint of the [lineage](lineage.md) head: `lineage_seq`, `lineage_head`), `anchor` |
 | `halt_id` | string \| null | safe identifier |
 | `actor` | string | who acted — never empty |
 | `scope` | string \| null | e.g. `agent:release-bot`, `all` |

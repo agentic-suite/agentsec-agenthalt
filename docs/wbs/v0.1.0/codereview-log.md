@@ -65,6 +65,47 @@ Format: `#<n> [<milestone> Review] <area> — <finding> → <resolution> (<commi
 - **Gates:** suite 313 passed · coverage 100.00% · `ruff` zero · `ruff format` clean · `mypy --strict` clean.
 - **Resolution:** all findings resolved; no open findings.
 
+### M2 — Lineage registry & subtree resolution (2.CR, #434) — 2026-11-27
+
+- **Scope:** `lineage`, `observe`, `subtree`, `supervisor`, the M2 CLI, `status` and `doctor` changes, and their
+  tests; reviewed against the [M2 design](../../design/m2-lineage-enrollment.md), PRD 06/27, ADR-0008/0009. An
+  independent reviewer agent (read-only) plus self-review. Each finding has a regression test.
+- **Findings:**
+  - #1 [M2 Review] supervisor — damage to the journal mid-run aborted supervision and reported "the command did
+    not run" for a running agent → recording failures degrade, never end, supervision.
+  - #2 [M2 Review] lineage/journal — one malformed line crashed `status`, `doctor` and the supervisor → type-checked
+    parsing; any bad record is a finding; undecodable journal is a `JournalError`.
+  - #3 [M2 Review] supervisor — a halted run's child could `attach` itself as a fresh root and then `run`
+    (fail-open) → attach records the run under its enrolled ancestors.
+  - #4 [M2 Review] supervisor — `run` recreated a deleted halt store and launched, and trusted an edited one
+    (fail-open) → the store is verified against the journal first.
+  - #5 [M2 Review] observe — process start times depended on `TZ`, so a halted parent was not recognised → UTC;
+    Linux start includes boot time.
+  - #6 [M2 Review] supervisor — damaged lineage with no parent found did not block a spawn → refused while any
+    halt is armed.
+  - #7 [M2 Review] subtree — a dead run adopted processes of a reused process group → group needs a live member.
+  - #8 [M2 Review] observe/subtree — the run-id marker matched command-line arguments and unrelated processes →
+    environment only, same user, no older than the run.
+  - #9 [M2 Review] subtree — a `sup_` placeholder outranked a real parent and edges were re-appended on every
+    resolve → real parents win.
+  - #10 [M2 Review] subtree — `session:` halts were not inherited → carried through lineage.
+  - #11 [M2 Review] supervisor/lineage — blindness and failed writes were lost and `lineage_verified` read true; a
+    broken journal chain was not a lineage finding → journaled, retried, flagged.
+  - #12 [M2 Review] supervisor — `--user` checked only the nearest parent; `sudo` wrote state as root → every
+    ancestor checked including group write; state written as the invoking user.
+  - #13 [M2 Review] lineage — a held lock hung the resolver past its deadline; the resolver crashed when it could
+    not record → bounded lock wait; `complete: false`.
+  - #14 [M2 Review] cli — `agenthalt --home X run -- cmd` failed (present since M0) → global options are skipped
+    when splitting at `--`.
+- **Accepted, not changed (stated limits):** without `--user` a same-user agent can read the adapter keys; the
+  agent shares the operator's terminal under `--user` (`TIOCSTI`, mitigated by sudo `use_pty`); the journal and
+  store locks are not deadline-bounded; macOS cannot see a child that double-forks between polls, clears its
+  environment and closes inherited descriptors; ACLs are not examined by the `--user` directory check.
+- **Gates:** macOS (Python 3.12) 453 passed, 2 skipped (Linux-root-only), coverage 99%, M2 modules 96–99%; Linux
+  container as root 451 passed, 4 skipped, including the real cgroup double-fork and `--user` drop tests; ruff and
+  `mypy --strict` clean. CI does not run the two Linux-root tests; the container run is their evidence.
+- **Resolution:** all findings resolved; no open findings.
+
 <!--
 ### M0 — Foundation, CLI & halt journal (0.CR)
 

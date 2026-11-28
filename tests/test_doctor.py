@@ -47,6 +47,7 @@ def test_all_checks_present_and_healthy(tmp_path: Path) -> None:
         "home",
         "journal",
         "store",
+        "lineage",
         "adapters",
         "panic_key",
         "cgroup",

@@ -44,3 +44,9 @@ Security) is deployed.
 On macOS the built-in egress cut ([ADR-0012](0012-built-in-egress-fallback.md)) filters by user, so it needs the
 enrolled run under a dedicated OS user. Whether the supervisor can launch a run that way is open, to be decided
 in the M2 design. Until then the cut reports `unsupported` on macOS.
+
+## Amendment (2026-11-27, M2 design)
+
+Decided: the supervisor can launch a run under a dedicated OS user with `run --user` (opt-in, needs root, DD-46).
+The consequence "an unprivileged child cannot leave its cgroup" holds only where the child has no write access to
+a sibling cgroup; in a delegated same-user hierarchy a move is detected, not prevented.

@@ -51,6 +51,7 @@ ACTIONS = frozenset(
         "escalate",
         "trigger_rejected",
         "finding",
+        "lineage",
         "anchor",
     }
 )
@@ -146,17 +147,20 @@ class Journal:
     def _read(self) -> Iterator[tuple[str, int, dict[str, Any]]]:
         """Yield ``(segment_name, line_no, entry)``; raise on unparsable lines."""
         for _, path in self._segments():
-            with path.open(encoding="utf-8") as handle:
-                for line_no, line in enumerate(handle, start=1):
-                    try:
-                        entry = json.loads(line)
-                    except json.JSONDecodeError as exc:
-                        raise JournalError(
-                            f"{path.name} line {line_no}: cannot parse entry ({exc.msg})"
-                        ) from None
-                    if not isinstance(entry, dict):
-                        raise JournalError(f"{path.name} line {line_no}: entry is not an object")
-                    yield path.name, line_no, entry
+            try:
+                text = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError as exc:
+                raise JournalError(f"{path.name}: not UTF-8 ({exc.reason})") from None
+            for line_no, line in enumerate(text.splitlines(), start=1):
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise JournalError(
+                        f"{path.name} line {line_no}: cannot parse entry ({exc.msg})"
+                    ) from None
+                if not isinstance(entry, dict):
+                    raise JournalError(f"{path.name} line {line_no}: entry is not an object")
+                yield path.name, line_no, entry
 
     def entries(self, *, halt_id: str | None = None) -> Iterator[dict[str, Any]]:
         for _, _, entry in self._read():

@@ -94,6 +94,7 @@ def test_actions_vocabulary() -> None:
                 "escalate",
                 "trigger_rejected",
                 "finding",
+                "lineage",
                 "anchor",
             }
         )

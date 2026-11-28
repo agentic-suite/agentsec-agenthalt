@@ -8,7 +8,7 @@ import sys
 
 import pytest
 
-from agenthalt.cli import COMMANDS, main
+from agenthalt.cli import COMMANDS, _split_run, main
 
 ALL_COMMANDS = [
     "run",
@@ -169,10 +169,13 @@ def test_run_requires_command_after_dashdash(capsys: pytest.CaptureFixture[str])
     assert code == 5
 
 
-def test_run_with_command_is_unavailable(capsys: pytest.CaptureFixture[str]) -> None:
-    code, _, err = run(capsys, "run", "--name", "bot", "--", "sleep", "1")
-    assert code == 5
-    assert "not available in this build" in err
+@pytest.mark.parametrize(
+    "options", [[], ["--home", "state"], ["--log-level=error"], ["--home=state"]]
+)
+def test_run_command_is_split_after_global_options(options: list[str]) -> None:
+    own, command = _split_run([*options, "run", "--name", "bot", "--", "sleep", "--", "1"])
+    assert own == [*options, "run", "--name", "bot"]
+    assert command == ["sleep", "--", "1"]
 
 
 def test_attach_missing_pid(capsys: pytest.CaptureFixture[str]) -> None:
@@ -191,12 +194,6 @@ def test_attach_foreign_pid(capsys: pytest.CaptureFixture[str]) -> None:
     code, _, err = run(capsys, "attach", "--pid", "1")
     assert code == 5
     assert "another user" in err
-
-
-def test_attach_own_pid_is_unavailable(capsys: pytest.CaptureFixture[str]) -> None:
-    code, _, err = run(capsys, "attach", "--pid", str(os.getpid()))
-    assert code == 5
-    assert "not available in this build" in err
 
 
 @pytest.mark.parametrize(

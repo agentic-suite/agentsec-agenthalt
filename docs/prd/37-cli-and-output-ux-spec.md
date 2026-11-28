@@ -13,7 +13,7 @@ next — and it never fakes a success.*
 
 | Command | Purpose | Key flags |
 |---|---|---|
-| `agenthalt run` | Launch an agent under the enrollment supervisor (owns its process group/cgroup; records the lineage root — DD-38) | `--name`, `-- <cmd>` |
+| `agenthalt run` | Launch an agent under the enrollment supervisor (owns its process group/cgroup; records the lineage root — DD-38); returns the agent's exit status (DD-47) | `--name`, `--user` (DD-46), `-- <cmd>` |
 | `agenthalt attach` | Enroll an already-running agent, best-effort (`lineage_verified: false` until a full walk succeeds) | `--pid`, `--name` |
 | `agenthalt halt` | Raise a halt (mode via flag or shortcut) | `--agent\|--session\|--run\|--all`, `--mode`, `--reason` (required for `kill`/`--all`), `--deadline-ms`, `--json`, `--yes` |
 | `agenthalt pause` / `quarantine` / `kill` | Mode shortcuts for the ladder ([PRD 18](18-stop-modes.md)) | same as `halt` |

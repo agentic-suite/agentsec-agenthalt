@@ -58,7 +58,7 @@ Each open decision names the milestone that must close it (from the WBS) and the
 
 | # | Decision | Current position | Resolve by | Owner | Status |
 |---|---|---|---|---|---|
-| 1 | **Lineage edge source priority** — hook vs process adapter vs runtime adapter when they disagree | Process observation wins (ADR-0008, [PRD 27](27-lineage-model.md)) | M2 — WBS 2.D0 (adopt), M12 — WBS 12.6 (revisit with partner data) | eng | Adopted hypothesis |
+| 1 | **Lineage edge source priority** — hook vs process adapter vs runtime adapter when they disagree | Process observation wins (ADR-0008, [PRD 27](27-lineage-model.md)) | M2 — WBS 2.D0 (adopt), M12 — WBS 12.6 (revisit with partner data) | eng | Adopted (M2); revisit at M12 |
 | 2 | **Pause max-TTL default** | 24 h, expiring to `kill` | — | owner | **Decided (DD-37)** |
 | 3 | **Fleet-halt quorum** — is 2 approvers right for `--all`? | 2; v0.1.0 uses local-CLI-only + typed confirmation (DD-16) | v0.2.0 (R18) | security | Open |
 | 4 | **Escalate-on-act defaults** — which attempt classes auto-escalate | None at v0.1.0 (manual `escalate` only, DD-13) | v0.2.0 (R15) | eng | Open |
@@ -68,7 +68,7 @@ Each open decision names the milestone that must close it (from the WBS) and the
 | 8 | **Stuck-loop triggers** | v0.3.0, after modes + RBAC are proven (DD-14) | v0.3.0 | eng | Deferred |
 | 9 | **Remote anchoring default** | Local anchor; RFC 3161 opt-in ([PRD 17](17-evidence-and-proof-format.md)) | M5 | security | Open |
 | 10 | **Verification-key publication** | The release attestation bundle | M4 (WBS 4.6), M13 | security | Open |
-| 11 | **Enrollment mechanism** — supervisor vs attach semantics, macOS escape handling | `agenthalt run` / `attach` (DD-38, RK-23) | M0 (CLI), M2 — WBS 2.D0 / 2.7 (registry + supervisor) | eng | Adopted hypothesis |
+| 11 | **Enrollment mechanism** — supervisor vs attach semantics, macOS escape handling | `agenthalt run` / `attach` (DD-38, RK-23) | M0 (CLI), M2 — WBS 2.D0 / 2.7 (registry + supervisor) | eng | **Closed (M2): DD-38, DD-46** |
 | 12 | **Survivor-probe method per platform** | Liveness + egress observation; observer recorded in the receipt | M8 | eng | Open |
 | 13 | **Self-attestation key custody** — where the built-in executor key lives and how it rotates | Separate executor key, `attestation: self` (DD-40) | M4 | security | Open |
 | 14 | **Reference-hardware classes** | [PRD 39](39-performance-budget.md) table | M11 | release | Open |

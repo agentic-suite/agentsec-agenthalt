@@ -15,7 +15,7 @@ import os
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from agenthalt import __version__
 from agenthalt.config import Config, ConfigError, load_config
@@ -24,15 +24,19 @@ from agenthalt.doctor import Probes, format_checks, run_checks, verdict
 from agenthalt.exit_codes import ExitCode, ReceiptStatus, exit_code_for
 from agenthalt.ids import validate_id
 from agenthalt.journal import Journal, JournalError
+from agenthalt.lineage import LineageError, LineageRegistry
 from agenthalt.logs import configure_logging, get_logger
 from agenthalt.scopes import Mode, Scope
 from agenthalt.store import Store, StoreError
+from agenthalt.subtree import Graph
+from agenthalt.supervisor import EnrollmentError, Supervisor
 
 __all__ = ["COMMANDS", "main"]
 
 MANUAL_FALLBACK = "docs/prd/28-failure-mode-runbook.md §7"
 FLEET_CONFIRMATION = "halt all"
 HALT_MODES = ("pause", "quarantine", "kill")
+_VALUE_OPTIONS = frozenset({"--config", "--home", "--log-level", "--log-format"})
 
 EXIT_CODE_HELP = """\
 Exit codes (stable contract):
@@ -150,8 +154,9 @@ def build_parser() -> _Parser:
         )
         return p
 
-    p = add("run", usage="agenthalt run [--name NAME] -- <cmd> [args...]")
+    p = add("run", usage="agenthalt run [--name NAME] [--user USER] -- <cmd> [args...]")
     p.add_argument("--name", type=_identifier("--name"), help="name for the enrolled run")
+    p.add_argument("--user", help="run the agent as this separate OS user (needs sudo)")
 
     p = add("attach")
     p.add_argument("--pid", type=_positive_int, required=True, help="process id to enroll")
@@ -383,7 +388,9 @@ def _status(args: argparse.Namespace, config: Config) -> int:
         halts = [h for h in halts if h.halt_id == args.halt]
         if not halts:
             raise UsageError(f"agenthalt status: no active halt {args.halt}")
+    lineage = _lineage_view(config)
     healthy = health.status == "ok" and health.signal is None
+    intact = healthy and not lineage["tamper"]
     if args.json:
         print(
             json.dumps(
@@ -396,11 +403,12 @@ def _status(args: argparse.Namespace, config: Config) -> int:
                         "recovered": recovered,
                     },
                     "halts": [h.to_dict() for h in halts],
+                    "lineage": lineage,
                 },
                 sort_keys=True,
             )
         )
-        return int(ExitCode.COMPLETE if healthy else ExitCode.INCOMPLETE)
+        return int(ExitCode.COMPLETE if intact else ExitCode.INCOMPLETE)
     if recovered:
         print("store: recovered from the journal after an interrupted write")
     line = f"store: {health.status}" + (
@@ -414,13 +422,14 @@ def _status(args: argparse.Namespace, config: Config) -> int:
             f"  {h.halt_id}  {h.scope!s:<24} {h.mode.label:<10} {h.status.value:<9} "
             f"set {h.set_at} by {h.actor} — {h.reason or '-'}"
         )
+    _print_lineage(lineage)
     if not healthy:
         print(
             f"  The store does not match the journal. Do not edit either; see {MANUAL_FALLBACK}.",
             file=sys.stderr,
         )
         return int(ExitCode.INCOMPLETE)
-    return int(ExitCode.COMPLETE)
+    return int(ExitCode.COMPLETE if intact else ExitCode.INCOMPLETE)
 
 
 def _lift(args: argparse.Namespace, config: Config) -> int:
@@ -430,6 +439,101 @@ def _lift(args: argparse.Namespace, config: Config) -> int:
         raise UsageError(f"agenthalt lift: {exc}") from None
     print(f"halt {args.halt} lifted (journaled).")
     return int(ExitCode.COMPLETE)
+
+
+def _supervisor(config: Config) -> Supervisor:
+    return Supervisor(config.home, segment_max_entries=config.segment_max_entries, actor=_actor())
+
+
+def _run(args: argparse.Namespace, command: list[str], config: Config) -> int:
+    try:
+        result = _supervisor(config).run(command, name=args.name, user=args.user)
+    except (EnrollmentError, ValueError) as exc:
+        raise UsageError(f"agenthalt run: {exc}") from None
+    print(
+        f"agenthalt: run {result.run_id} enrolled; agent exited {result.exit_code}", file=sys.stderr
+    )
+    for why in result.gaps:
+        print(f"agenthalt: lineage gap: {why}", file=sys.stderr)
+    if result.survivors:
+        pids = ", ".join(map(str, result.survivors))
+        print(f"agenthalt: still running (nothing was done to them): pid {pids}", file=sys.stderr)
+    return result.exit_code  # the agent's own status (DD-47)
+
+
+def _attach(args: argparse.Namespace, config: Config) -> int:
+    try:
+        result = _supervisor(config).attach(args.pid, name=args.name)
+    except (EnrollmentError, ValueError) as exc:
+        raise UsageError(f"agenthalt attach: {exc}") from None
+    how = "enrolled" if result.created else "already enrolled"
+    print(
+        f"{result.run_id} {how}: pid {args.pid}, {len(result.members)} member(s), "
+        f"lineage_verified: {str(result.verified).lower()}"
+    )
+    return int(ExitCode.COMPLETE)
+
+
+def _lineage_view(config: Config) -> dict[str, Any]:
+    """The lineage section of ``status``: runs, orphans, gaps and tamper findings."""
+    journal = Journal(config.home, segment_max_entries=config.segment_max_entries)
+    registry = LineageRegistry(
+        config.home, journal=journal, segment_max_entries=config.segment_max_entries
+    )
+    view: dict[str, Any] = {"runs": [], "orphans": [], "gaps": [], "tamper": []}
+    try:
+        tamper = registry.check_tamper(actor=_actor())
+        read = registry.read()
+        graph = Graph(read.edges)
+        view["tamper"] = [
+            {"problem": f.problem, "segment": f.segment, "lineage_seq": f.seq, "detail": f.detail}
+            for f in tamper
+        ]
+        view["orphans"] = list(graph.orphans())
+        view["gaps"] = [
+            {"run": f["run"], "node": f["node"], "why": f["why"]}
+            for f in registry.findings("lineage_gap")
+        ]
+    except (LineageError, JournalError, OSError) as exc:
+        view["tamper"].append(
+            {"problem": "unreadable", "segment": "lineage", "lineage_seq": 0, "detail": str(exc)}
+        )
+        return view
+    gapped = {g["run"] for g in view["gaps"]}
+    for run in graph.enrolled():
+        meta = graph.meta[run]
+        verified = not tamper and run not in gapped
+        if meta["enrollment"] == "attach":
+            verified = verified and run in read.verified
+        view["runs"].append(
+            {
+                "run": run,
+                "name": meta.get("name"),
+                "enrollment": meta["enrollment"],
+                "pid": meta.get("pid"),
+                "members": len(graph.walk([run])[0]),
+                "lineage_verified": verified,
+            }
+        )
+    return view
+
+
+def _print_lineage(view: dict[str, Any]) -> None:
+    for run in view["runs"]:
+        print(
+            f"  {run['run']}  {run['name']!s:<20} {run['enrollment']:<6} pid {run['pid']}  "
+            f"{run['members']} member(s)  lineage_verified: {str(run['lineage_verified']).lower()}"
+        )
+    if view["orphans"]:
+        print(f"  orphans (parent unknown; not touched): {', '.join(view['orphans'])}")
+    for gap in view["gaps"]:
+        print(f"  lineage gap in {gap['run']}: {gap['why']} ({gap['node']})")
+    for item in view["tamper"]:
+        print(
+            f"  lineage tamper: {item['problem']} at {item['segment']} seq {item['lineage_seq']} "
+            f"— {item['detail']}",
+            file=sys.stderr,
+        )
 
 
 def _dispatch(args: argparse.Namespace, run_command: list[str] | None, config: Config) -> int:
@@ -448,23 +552,24 @@ def _dispatch(args: argparse.Namespace, run_command: list[str] | None, config: C
             raise UsageError(
                 "agenthalt run: give the agent command after '--': run -- <cmd> [args...]"
             )
-        return _unavailable(command)
+        return _run(args, run_command, config)
     if command == "attach":
         _check_attach(args.pid)
-        return _unavailable(command)
+        return _attach(args, config)
     return _unavailable(command)
 
 
 def _split_run(argv: list[str]) -> tuple[list[str], list[str] | None]:
-    """Split ``run ... -- <cmd>`` by hand.
+    """Split ``[options] run ... -- <cmd>`` by hand.
 
     argparse's REMAINDER handling of ``--`` differs across Python versions.
     """
-    if argv and argv[0] == "run":
-        if "--" in argv:
-            i = argv.index("--")
-            return argv[:i], argv[i + 1 :]
-        return argv, None
+    index = 0
+    while index < len(argv) and argv[index].startswith("-"):
+        index += 2 if argv[index] in _VALUE_OPTIONS else 1
+    if argv[index : index + 1] == ["run"] and "--" in argv:
+        i = argv.index("--")
+        return argv[:i], argv[i + 1 :]
     return argv, None
 
 

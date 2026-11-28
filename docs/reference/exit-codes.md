@@ -34,3 +34,6 @@ the receipt. `ReceiptStatus.worst()` and `exit_code_for()` are the single place 
 | `journal verify` / `journal show` | chain intact | `1` — the chain is broken (an incomplete record, not a usage error) |
 | `prove` (M6) | `VERIFIED (complete)` | `1` verified but not clean · `2` `TAMPERED` |
 | reserved commands in this build | — | `5` — "not available in this build" |
+
+`agenthalt run` is a launcher: it returns the **agent's** exit status, not a halt outcome (DD-47). A refusal
+before launch is `5`.

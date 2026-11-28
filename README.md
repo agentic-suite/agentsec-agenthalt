@@ -89,7 +89,7 @@ graph**, not a process:
 ## Quickstart
 
 > **Planned interface (v0.1.0).** The commands below are the documented contract. In this development build
-> `doctor`, `journal`, `status` and `lift` run, and `halt`/`pause`/`quarantine`/`kill` record a halt that the
+> `doctor`, `journal`, `status`, `lift`, `run` and `attach` run, and `halt`/`pause`/`quarantine`/`kill` record a halt that the
 > runtime choke enforces — but processes are **not yet** suspended, revoked or killed (M3–M4), so a halt exits
 > `1` (`incomplete`) and points at the [manual fallback](docs/prd/28-failure-mode-runbook.md). The remaining
 > commands are reserved and exit `5`.

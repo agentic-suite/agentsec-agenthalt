@@ -13,6 +13,7 @@ and `doctor` that every later milestone builds on.
 | Milestone | Foundation deliverable | Acceptance test |
 |---|---|---|
 | M0 | CLI surface + reserved exit codes 0–5, fail-closed config loader, halt journal (hash chain), `doctor`, structured logs | `tests/test_cli_surface.py`, `tests/test_exit_codes.py`, `tests/test_config.py`, `tests/test_journal.py`, `tests/test_doctor.py`, `tests/test_logs.py`, `tests/test_packaging.py`, `tests/test_ci_workflow.py`, `tests/test_docs.py` (WBS 0.T) |
+| M2 | Lineage registry (chain, authentication, tamper findings), process observation, subtree resolver, post-halt spawn rule, enrollment (`run`/`attach`, `--user`) | `tests/test_lineage.py`, `tests/test_subtree.py`, `tests/test_observe.py`, `tests/test_supervisor.py`, `tests/test_supervisor_paths.py`, `tests/test_supervisor_damage.py`, `tests/test_cli_m2.py` (WBS 2.T) |
 
 ## Requirement → CUJ → WBS → test → parity
 
