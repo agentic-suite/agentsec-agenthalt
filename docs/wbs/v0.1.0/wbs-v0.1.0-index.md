@@ -129,7 +129,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-44 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-45 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -218,12 +218,12 @@ work item 2.7 (#569) and updated the affected issues in place.
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-44 are honored across milestones; the eleven accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-45 are honored across milestones; the twelve accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
 |---|---|---|
-| **DD-01** Compose-not-own (agenthalt owns no layer) | M3, M4 (adapter boundary) | ADR-0001 |
+| **DD-01** Compose-not-own (agenthalt owns no layer; DD-45 fallbacks excepted) | M3, M4 (adapter boundary) | ADR-0001 |
 | **DD-02** Halt store + dual choke (single source of stop truth) | M1 | ADR-0001, ADR-0002 |
 | **DD-03** Fail-closed everywhere | M1 | ADR-0004 |
 | **DD-04** Confirmations, not requests; `incomplete` first-class | M6 | ADR-0003 |
@@ -267,6 +267,7 @@ maps to the milestone(s) that implement it:
 | **DD-42** Unknown config keys rejected; unknown env names warn | M0 | — |
 | **DD-43** Strictest mode wins when halts overlap | M1 | — |
 | **DD-44** M1 store same-OS-user + tamper-detected; separation with enrollment | M1, M2 | ADR-0009 |
+| **DD-45** Built-in egress fallback (amends DD-01) | M3, M9 | ADR-0012 |
 
 ## Risks → milestone (PRD 08, RK-1..RK-25)
 

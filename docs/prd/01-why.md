@@ -82,12 +82,12 @@ agenthalt's minimum bar, taken from that definition:
 
 ## What agenthalt is
 
-> **"One command to stop any agent, on any harness, and prove it — freeze the process tree, kill the
-> credentials, cut the gateway, keep the evidence."**
+> **"One command to stop an agent's whole subtree and prove it — freeze the process tree, kill the
+> credentials and cut the gateway where those layers are deployed, keep the evidence."**
 
 The ecosystem's **breaker box**: a harness-agnostic, out-of-band **composed-stop control plane** that returns a
 verifiable proof-of-stop and a hash-chained evidence snapshot. It owns no enforcement layer of its own; it drives
-the ones the ecosystem already ships.
+the ones the ecosystem already ships, with minimal stop-time fallbacks for process and egress cuts (DD-45).
 
 ## What this absorbs
 

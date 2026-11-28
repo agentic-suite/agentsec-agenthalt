@@ -14,14 +14,14 @@ or deliberate trade-off that answers it, and the churn trigger that means we got
 | "Will it slow my agents down?" | The choke is a local read with a seconds-TTL cache; halt-path cost is zero when no halt is active; the ≤1 s budget applies **to the stop**, not to the loop | [PRD 13](13-non-functional-requirements.md) §Speed |
 | "Will it break my dev workflows?" | Monitor-first: the store can be armed without a halt ever firing; drills run against a demo agent, not your fleet; pause is resumable | CUJ-4, [PRD 18](18-stop-modes.md) |
 | "Do I need to install the whole ecosystem first?" | v0.1.0 is local-first: process + evidence work standalone; credential/gateway layers light up when agentkeys/agentgate exist and report `unsupported` honestly otherwise | DD-18, [PRD 19](19-harness-compatibility.md) |
-| "Is this another agent-process tool I'll have to rip out?" | It composes the layers you already run and owns none — no parallel stack, no rip-out path | [PRD 32](32-build-vs-integrate.md) |
+| "Is this another agent-process tool I'll have to rip out?" | It composes the layers you already run and owns none beyond stop-time fallbacks (DD-45) — no parallel stack, no rip-out path | [PRD 32](32-build-vs-integrate.md) |
 | "What if it halts something wrongly?" | `pause` is the first-move default (RK-20); every halt is journaled with actor + reason; lift/restore returns to the prior state (E18) | [PRD 18](18-stop-modes.md) |
 
 ## P2 Ravi — security engineer / SecOps
 
 | Objection | Answer | Where |
 |---|---|---|
-| "How do I trust the receipt?" | Confirmations are signed by the enforcement points, not self-reported; `agenthalt prove` re-derives offline; `requested` is never rounded up to `confirmed` | [PRD 17](17-evidence-and-proof-format.md), DD-04 |
+| "How do I trust the receipt?" | Confirmations are signed by whatever performed the cut. At v0.1.0 agenthalt's own process and egress cuts are self-attested and labelled `attestation: self` (DD-40); third-party attestation arrives with agentseatbelt/agentkernel. `agenthalt prove` re-derives offline; `requested` is never rounded up to `confirmed` | [PRD 17](17-evidence-and-proof-format.md), DD-04 |
 | "What if the stop path itself is attacked?" | The adversarial sub-matrix is the sanctioned attack surface; suppression is itself a dead-man trigger; the manual fallback runbook ships with the tool | [PRD 06](06-security-baseline.md), [PRD 28](28-failure-mode-runbook.md) |
 | "Can I trigger it from my existing incident tooling?" | Webhook (HMAC), PagerDuty button, Slack action — all journaled; SIEM rules can fire it today | [PRD 16](16-trigger-catalogue.md) |
 | "Will it show up in my SIEM?" | Halt + trigger are first-class agentwatch events; the refused-call log is written by the enforcement points | R6, [PRD 15](15-data-model.md) |
@@ -47,7 +47,7 @@ or deliberate trade-off that answers it, and the churn trigger that means we got
 | Objection | Answer | Where |
 |---|---|---|
 | "Can I embed this without adopting your ecosystem?" | Library + MCP + HTTP surfaces; the halt contract is one operation; layer adapters are pluggable and report `unsupported` gracefully | [PRD 02](02-architecture.md) §contract |
-| "Will you compete with my layer?" | agenthalt owns no layer (DD-01); your enforcement point can be a composed executor adapter — one schema, one PR | [PRD 32](32-build-vs-integrate.md) |
+| "Will you compete with my layer?" | agenthalt owns no layer (DD-01; stop-time fallbacks aside, DD-45); your enforcement point can be a composed executor adapter — one schema, one PR | [PRD 32](32-build-vs-integrate.md) |
 | "Is the format going to break under me?" | Receipt/evidence schemas are append-only; a v0.1.0 receipt verifies forever | [PRD 26](26-receipt-schema-and-examples.md) §compat |
 
 ## Adoption path (per persona)

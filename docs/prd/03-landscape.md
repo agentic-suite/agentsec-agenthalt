@@ -85,7 +85,7 @@ drill — and **composes** #21–#24 from agentwatch, agentpolicy and the trigge
 - **Detection / guardrails** (Zenity Surface, Llama Guard, llm-guard, prompt inspectors) — agenthalt detects
   nothing; it is the hand on the breaker. Detection and enforcement stay separate.
 - **The layers themselves** — agentgate (MCP proxy), agentkeys (credentials), agentseatbelt/agentkernel
-  (confinement), agentpolicy (decisions), agentwatch (recording). agenthalt **composes** them; it owns none.
+  (confinement), agentpolicy (decisions), agentwatch (recording). agenthalt **composes** them; it owns none (beyond the DD-45 stop-time fallbacks).
 - **Forensics suites** (AgentDFIR, agentcomply) — agenthalt *produces* an evidence snapshot; DFIR *analyses* it.
 - **Attack drills** (agentdrill) — agentdrill tests whether a control blocks an attack; agenthalt's drill tests
   whether the **stop** actually stops. They share the pack runner, not the purpose.

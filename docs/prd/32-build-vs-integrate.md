@@ -2,7 +2,7 @@
 
 **BLUF:** agenthalt builds exactly **six things** — the coordinator, the halt store, the lineage registry, the
 receipt/proof machinery, the drill runner, and the journal — and **integrates everything else** through the
-composed layers' documented action surfaces. It deliberately builds **no** policy engine, gateway, broker,
+composed layers' documented action surfaces (plus two minimal stop-time fallback executors, DD-45). It deliberately builds **no** policy engine, gateway, broker,
 sandbox, detector, or protocol. This boundary is the product: a composition tool that grew a layer would be two
 products, and a fleet that runs five half-switches instead of one composed one is the status quo we exist to
 replace.
@@ -20,13 +20,16 @@ replace.
 | **Drill runner + self-halt pack** | The drill is the product's credibility; nobody else ships it (K9, R14) |
 | **Halt journal** | The tamper-evident record of who stopped what (R12) |
 
+Plus two **fallback executors**, process and egress, used only where no composed layer is deployed (DD-40,
+DD-45). They are not a seventh component: they cut on halt and confine nothing.
+
 ## What agenthalt integrates (and the exact surface)
 
 | Layer | Integrated surface | Degrades when absent |
 |---|---|---|
 | **agentkeys** | revoke actions + credential inventory for the subtree | credentials confirmations → `unsupported`; readout carries unrevocable grants |
 | **agentgate** | session termination + per-call refusal (the gateway half of the dual choke) | gateway step → `unsupported` (Wave-0 default, DD-18) — receipt `partial-layer` |
-| **agentseatbelt** | process suspend/freeze + egress block (macOS/local) | process/sandbox confirmations degrade; manual fallback runbook leg |
+| **agentseatbelt** | process suspend/freeze + egress block (macOS/local) | built-in process and egress fallbacks cut, labelled `attestation: self`; `unsupported` where they cannot |
 | **agentkernel** | eBPF kill triggers + kernel-level containment (Linux, Wave 2) | kernel kill dead-man unavailable; uncovered routes named |
 | **agentwatch** | event emission/join + the evidence trace window | evidence → degraded (`evidence: failed`), loudly; halt events never blocked by telemetry failure |
 | **agentpolicy** | budget-exhaustion + tamper triggers (dead-man sources, v0.2.0) | dead-man switches inert; manual triggers only |

@@ -2,7 +2,7 @@
 
 **BLUF:** agenthalt is **harness-agnostic by construction** — containment happens at the **process,
 credential, gateway, and sandbox layers**, *below* the harness, so it works for every harness the ecosystem can
-see — including one with **zero hook surface** or a hostile one whose hooks were removed. Compatibility is
+reach by enrolling its processes — including one with **zero hook surface** or a hostile one whose hooks were removed. Compatibility is
 therefore about the **layer set exercised end-to-end in the field test**, not about per-harness builds. The
 release carries an honest compatibility table, including explicit "not supported" rows.
 
@@ -27,11 +27,13 @@ was exercised*.
 
 | Harness | Containment path | v0.1.0 | v0.3.0 |
 |---|---|---|---|
-| **Claude Code** | Process tree + agentkeys + sandbox; hooks as accelerant | ✅ **field-tested end-to-end** (the drill's primary target) | ✅ |
-| **Codex CLI** | Process tree + agentkeys + sandbox (config-surface spawn tracking) | ✅ **field-tested end-to-end** | ✅ |
-| **Gemini CLI** | Process tree + agentkeys + sandbox | ✅/⚠ exercised via the same layer set; per-harness spawn leg in the drill matrix | ✅ |
+| **Claude Code** | Process tree + agentkeys + sandbox; hooks as accelerant | 🎯 target: field-tested end-to-end (the drill's primary target) | ✅ |
+| **Codex CLI** | Process tree + agentkeys + sandbox (config-surface spawn tracking) | 🎯 target: field-tested end-to-end | ✅ |
+| **Gemini CLI** | Process tree + agentkeys + sandbox | 🎯/⚠ target: exercised via the same layer set; per-harness spawn leg in the drill matrix | ✅ |
 | **Cursor** | Process tree + sandbox (GUI spawn topology differs; pid-tracked) | ⚠ covered-by-construction; exercised as the drill allows (headless limits) — stated honestly per field test | ✅ |
 | **GitHub Copilot** (agent mode) | Process tree + sandbox + enterprise/Entra credential layer (closed hooks — the documented lower-layer path) | ⚠ documented lower-layer coverage, **not field-tested** (the agentpolicy precedent) | ✅ (documented) |
+
+> 🎯 marks a target, not a result. A row changes to ✅ only when the field-test report records it (DD-29).
 
 > **Requirement (v0.1.0):** ≥2 Tier-1 harnesses **exercised end-to-end in the field test** (the working
 > hypothesis: Claude Code + Codex CLI, mirroring the ecosystem's proven surfaces); the rest are either

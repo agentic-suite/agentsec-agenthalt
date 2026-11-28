@@ -25,7 +25,7 @@ next — and it never fakes a success.*
 | `agenthalt drill` | Run the rehearsal | `--case <name>`, `--platform <os>`, `--all`, `--json` |
 | `agenthalt journal` | `show\|verify` the halt journal | `--halt <id>`, `--segment` |
 | `agenthalt evidence` | `collect\|export\|verify` snapshots | `--halt <id>`, `--out` |
-| `agenthalt doctor` | Preflight sanity (run before you need it), incl. platform checks: macOS Accessibility (panic key), Linux cgroup v2 delegation (enrollment), hook surface present/absent | `--migrate`, `--verbose` |
+| `agenthalt doctor` | Preflight sanity (run before you need it), incl. platform checks: macOS Accessibility (panic key), Linux cgroup v2 delegation (enrollment), egress-fallback privileges (DD-45), hook surface present/absent | `--migrate`, `--verbose` |
 | `agenthalt runbook` | Print the operator runbook section | `--section <n>` ([PRD 28](28-failure-mode-runbook.md)) |
 
 Naming: subcommands are verbs, flags are long-form only in docs (`-h/--help` excepted); config precedence is

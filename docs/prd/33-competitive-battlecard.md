@@ -96,7 +96,7 @@ worked."**
   2026-11-16) + the vendor wave just named the category. Every vendor will have a switch by the end of the
   quarter — the open, provable, composed one has a narrow window to become the standard surface ([PRD 01](01-why.md)).
 - **Why us:** the only composed stop (row #18), the only lineage proof (#19), the only confirmations-based
-  receipt (#20), the only shipped drill (#25) — and the ecosystem gives us every layer for free
+  receipt (#20), the only planned drill (#25; not yet shipped) — and the ecosystem gives us every layer for free
   ([PRD 03](03-landscape.md) coverage map).
 - **Where we lose today (say it in the room):** enterprise sales motion (they have one, we have a repo);
   K8s/kernel depth until agentkernel (Tigera); SaaS/NHI estate until agentkeys matures (Aembit/Grip); platform

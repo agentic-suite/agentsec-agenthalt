@@ -54,7 +54,7 @@ agenthalt.receipt.v1
   omitted.
 - `readout.coverage` states where each readout field came from. A field whose source is `unavailable` (e.g. no
   agentwatch) is *unknown*, not empty; an empty list only ever means a measured empty.
-- `confirmations[].attestation: self` marks a cut performed and signed by agenthalt's own OS executor (no
+- `confirmations[].attestation: self` marks a cut performed and signed by agenthalt's own OS or egress executor (no
   agentseatbelt/agentkernel); the verifier reports it distinctly (DD-40). A confirmation with `signed_by: null`
   can never have `status: confirmed`.
 - `subtree.survivor_probe` records how survivors were looked for; `survivors: []` is only as strong as its

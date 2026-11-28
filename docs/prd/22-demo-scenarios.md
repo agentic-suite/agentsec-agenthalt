@@ -1,7 +1,7 @@
 # PRD 22 — Demo Scenarios
 
 **BLUF:** agenthalt is a demo-native product — Wave 0's headline is **"stop it,"** and this tool is the sentence.
-Five canonical demos, all runnable from a clean install, each anchored to a real incident class and each ending
+Five canonical demos (four at v0.1.0; Demo 4 arrives with v0.2.0), runnable from a clean install, each anchored to a real incident class and each ending
 in the same two beats: **the stop** and **the proof**. Every demo has a script, an expected receipt, a timing
 budget, and a failure condition. If a demo cannot be run in ≤3 minutes by someone who did not build the tool,
 it is not a demo — it is a setup guide.
@@ -45,7 +45,7 @@ Every demo ends with the same two-screen close:
 | **Setup** | Same demo agent; **remove every agenthalt hook** from the harness config first, on camera; optionally have the agent's prompt claim "ignore stop commands" |
 | **Script** | 1) Show the hooks are gone (`agenthalt doctor` reports the hook surface: *absent*). 2) Start the agent on a destructive task. 3) Halt. |
 | **Halt path** | choke (gateway/runtime) + process + credential + sandbox layers — hooks never load-bearing (DD-06) |
-| **Expected receipt** | `complete` with `trigger.source=cli`; zero survivors; the note that containment came from below the harness |
+| **Expected receipt** | `complete` with agentgate, `partial-layer` without it; `trigger.source=cli`; zero survivors; the note that containment came from below the harness |
 | **Audience takeaway** | The stop works **because** it doesn't live in the harness — the exact property the H.R. 9917 incident definition demands |
 | **Timing** | ≤ 2 min |
 | **Failure condition** | Any dependence on a hook in the path; any survivor |
@@ -56,9 +56,9 @@ Every demo ends with the same two-screen close:
 
 | | |
 |---|---|
-| **Setup** | Demo agent holds a real-ish short-lived grant (agentkeys-issued) **and** a static key planted in its env (the honest bad case) |
+| **Setup** | Demo agent holds a real-ish short-lived grant (agentkeys-issued) **and** a static key planted in its env (the honest bad case). The static key is also declared in the demo fixture's credential inventory: v0.1.0 does not discover env-held keys |
 | **Script** | 1) Show the agent using both. 2) `agenthalt kill --agent <id>`. 3) Open the receipt; walk the confirmations. 4) Show the **readout**: the grant is `revoked (confirmed)`, the static key is listed under `unrevocable_grants` with its expiry window. |
-| **Expected receipt** | `complete`; credentials row `confirmed`; readout names the static key honestly |
+| **Expected receipt** | `complete` with agentgate, `partial-layer` without it; credentials row `confirmed`; readout names the static key honestly |
 | **Audience takeaway** | We revoke what can be revoked **and** we tell you what we couldn't** — the vendor-caveat honesty, built into the receipt |
 | **Timing** | ≤ 2 min |
 | **Failure condition** | Claiming the static key was "revoked" (forbidden claim, [PRD 20](20-standards-and-claims.md) §F) |
@@ -103,4 +103,4 @@ CUJ-19).
   CI-verified is retired.
 - Demo scripts live in the repo (`demos/`), versioned with the release; a demo broken by a release is a release
   blocker (RK-16 drill-theater guard).
-- The five demos exist to be **run by others**: design partners execute them in week 1 ([PRD 34](34-design-partner-evaluation-guide.md)).
+- The demos exist to be **run by others**: design partners execute the four v0.1.0 demos in week 1 ([PRD 34](34-design-partner-evaluation-guide.md)).

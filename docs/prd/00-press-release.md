@@ -1,6 +1,6 @@
 # PRD 00 — Press Release / FAQ
 
-**BLUF:** agenthalt is the **universal kill-switch for AI agents**: one command — `agenthalt halt` — composes a
+**BLUF:** agenthalt is a **composed kill switch for AI agents**: one command — `agenthalt halt` — composes a
 stop across every layer the ecosystem owns (the agent's **process tree**, its **credentials**, the **MCP
 gateway**, and its **sandbox**), preserves a **hash-chained evidence snapshot** of the scene, and returns a
 **proof-of-stop** receipt that names every descendant that was stopped, every grant that was revoked, and every
@@ -13,7 +13,7 @@ agentgate (disconnect), agentseatbelt/agentkernel (freeze), agentwatch (evidence
 
 ## Press release
 
-### agenthalt — one command to stop any agent, on any harness, and prove it
+### agenthalt — one command to stop an agent's whole subtree, across the layers it reaches, and prove it
 
 *Open-sourced today, agenthalt turns "stop that agent" from a Slack message into a single, auditable,
 sub-second action that freezes the process tree, kills the credentials, cuts the gateway, preserves the
@@ -52,7 +52,7 @@ scene, and returns a receipt that says — verifiably — **what stopped, what w
    the evidence snapshot is a hash-chained forensic artifact.
 
 **Availability:** installable via `pip install agentsec-agenthalt`, source under Apache-2.0 on GitHub.
-v0.1.0 composes the Wave-0 layers and therefore covers every harness the ecosystem can see — **≥2 Tier-1
+v0.1.0 composes the Wave-0 layers and applies to any harness whose processes it enrolls — **≥2 Tier-1
 coding-agent harnesses at v0.1.0, all 5 by v0.3.0** — with containment at the process/credential/sandbox layers
 for harnesses that expose no hooks at all ([PRD 05](05-features.md) §Compatibility).
 

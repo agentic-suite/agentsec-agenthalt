@@ -102,6 +102,7 @@ Milestones follow the authored WBS (`docs/wbs/v0.1.0/`, M0–M13). Named tests c
 | DD-42 unknown config keys rejected | R8 (fail-closed) |
 | DD-43 strictest mode wins | R8 |
 | DD-44 same-user store, tamper-detected until M2 | R8, R12 |
+| DD-45 built-in egress fallback | R1, R7 |
 
 ## WBS
 

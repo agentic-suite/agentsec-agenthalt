@@ -1,6 +1,6 @@
 # PRD 34 — Design-Partner Evaluation Guide
 
-**BLUF:** The field eval is a **one-week kit**: install, run the five demos, run the drill against *their*
+**BLUF:** The field eval is a **one-week kit**: install, run the four v0.1.0 demos, run the drill against *their*
 stack, inspect the receipts, and answer ten questions with artifacts in hand. This guide tells a design partner
 exactly what to test, what evidence to demand, how to report a miss, and — critically — what counts as a
 **blocker** (product failed its core claim) versus a **feature request** (product worked, wanted more). Partners
@@ -62,7 +62,7 @@ eval runs standalone; composed layers light up where they exist.
 
 ## Scoring: success criteria for the eval itself
 
-**Eval PASS** = all five demos ran without author help · drill ≤1 s p95 on their hardware · ≥1 receipt verified
+**Eval PASS** = all four v0.1.0 demos ran without author help · drill ≤1 s p95 on their hardware · ≥1 receipt verified
 offline · store-down test failed closed · zero unexplained triggers in the journal.
 
 **Eval FINDINGS** (expected, non-blocking): unsupported layers honestly reported · lineage orphans surfaced ·

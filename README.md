@@ -7,8 +7,9 @@
 [![Status: planned](https://img.shields.io/badge/status-planned%20v0.1.0-orange)](docs/prd/README.md)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/agentic-suite/agentsec-agenthalt/badge)](https://scorecard.dev/viewer/?uri=github.com/agentic-suite/agentsec-agenthalt)
 
-**The universal agent kill-switch. One command composes a stop across the process tree, credentials, MCP
-gateway, and sandbox — preserves hash-chained evidence — and returns a proof that the stop happened.**
+**A composed kill switch for AI agents. One command stops an agent's whole process tree, cuts what the composed
+layers reach (credentials, MCP gateway, sandbox), preserves hash-chained evidence, and returns a proof of what
+stopped.**
 
 Part of the [agentic-suite](https://github.com/agentic-suite) — open-source, harness-agnostic security for AI agents.
 
@@ -20,6 +21,20 @@ Part of the [agentic-suite](https://github.com/agentic-suite) — open-source, h
 > the implementation has not shipped. Watch or star the repo to follow progress. · **License:** Apache-2.0
 
 ---
+
+## What v0.1.0 does, and what it needs
+
+Planned behaviour, not shipped. A layer that isn't deployed is reported, never skipped silently.
+
+| Capability | agenthalt alone | + agentkeys, agentwatch | + agentgate, agentseatbelt/agentkernel |
+|---|---|---|---|
+| Stop the process subtree | built-in, self-attested | same | third-party attested |
+| Revoke credentials | `unsupported` | agentkeys-issued grants | same |
+| Cut the MCP gateway | `unsupported` | `unsupported` | yes |
+| Cut network egress | built-in fallback where privileged, else `unsupported` | same | yes |
+| Evidence snapshot | process tree, connections | + trace window | same |
+| 09:01 readout | survivors, siblings; the rest `unavailable` | + queued work, downstream, compensation | same |
+| Expected receipt status | `partial-layer` | `partial-layer` | `complete` possible |
 
 ## Why
 
@@ -151,8 +166,8 @@ status meaning "probably stopped."
 ## Compatibility
 
 agenthalt is **harness-agnostic by construction** — containment happens at the process, credential, gateway, and
-sandbox layers, *below* the harness. It works for every harness the ecosystem can see, including one with
-**zero hook surface**.
+sandbox layers, *below* the harness. It applies to any harness whose processes it enrolls, including one with
+**zero hook surface**; the release compatibility table states which were exercised.
 
 | Tier | Harness / ecosystem | v0.1.0 |
 |---|---|---|
@@ -199,7 +214,7 @@ Full matrix: [PRD 19](docs/prd/19-harness-compatibility.md).
 
 ## The Ecosystem
 
-agenthalt is the **composed stop** in the [agentic-suite](https://github.com/agentic-suite). It owns no layer —
+agenthalt is the **composed stop** in the [agentic-suite](https://github.com/agentic-suite). It owns no layer beyond minimal stop-time fallbacks —
 it composes:
 
 | Tool | Role in a halt |

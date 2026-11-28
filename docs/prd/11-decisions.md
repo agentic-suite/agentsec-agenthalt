@@ -5,7 +5,8 @@ the single source of stop truth** read by a **dual choke** (runtime + gateway), 
 (an unreachable store denies high-impact actions), **confirmations-not-requests** as the receipt's building
 block, the **agentwatch security-event schema** as the machine-readable halt surface, **hash-chained evidence**
 written **before** termination, **no ML in the stop path**, **no new protocol**, and the hard architectural
-rule that **agenthalt composes layers and owns none**.
+rule that **agenthalt composes layers and owns none** (its minimal fallback executors, DD-45, are the one
+stated exception).
 
 **Status:** Draft — v0.1.0 (2026-11-14) · **Owner:** @deghosal-2026 · **Parent:** agentic-suite #209 · PRD #216
 
@@ -13,7 +14,7 @@ rule that **agenthalt composes layers and owns none**.
 
 | # | Decision | Rationale |
 |---|---|---|
-| **DD-01** | **agenthalt owns no layer** — it composes agentkeys/agentgate/agentseatbelt/agentkernel and executes the stop through their documented actions | A composition tool that grew its own layer would be two products (PRD 02); layers keep their own controls — agenthalt asks, never bypasses |
+| **DD-01** | **agenthalt owns no layer** — it composes agentkeys/agentgate/agentseatbelt/agentkernel and executes the stop through their documented actions (amended by DD-45: minimal fallback executors) | A composition tool that grew its own layer would be two products (PRD 02); layers keep their own controls — agenthalt asks, never bypasses |
 | **DD-02** | **The halt store is the single source of stop truth**, read by the **dual choke** (runtime + gateway) before an action executes | One check the model can talk past is a suggestion (Clype bar, [PRD 01](01-why.md)); the store sits outside the model's control plane |
 | **DD-03** | **Fail-closed everywhere** — store unreachable, adapter failure, lineage gap ⇒ deny new high-impact actions with a distinct `reason_code` | The safe direction is always *stopped* (CUJ-16); the inverse of the predecessor's fail-open availability stance ([PRD 10](10-feature-parity.md) P10) |
 | **DD-04** | **Confirmations, not requests** — the receipt is built only from enforcement-point confirmations; `incomplete` is a first-class status | The category fudges with requests; proof-of-stop is the differentiator (R10) |
@@ -77,3 +78,4 @@ rule that **agenthalt composes layers and owns none**.
 | **DD-42** | **Unknown config keys are rejected** (exit 5, naming key + source); unknown `AGENTHALT_*` env names only warn in `doctor` | A silently ignored key — a trigger, a scope ceiling — is a fail-open path (DD-03). Env names stay permissive because secret references share the prefix |
 | **DD-43** | **Strictest mode wins when halts overlap** (`kill` > `quarantine` > `pause`); a tighter scope may add a restriction, never loosen one | Read literally, "a tighter scope wins" lets a narrow `pause` weaken a fleet `kill` — a fail-open path (DD-03). Refines PRD 13 ([M1 design](../design/m1-halt-store-choke.md)) |
 | **DD-44** | **The M1 store is same-OS-user, tamper-detected; OS-user separation arrives with enrollment (M2)** | Every store change is journal-first, so an out-of-band edit is detectable (`head_mismatch`); separating the agent's OS user needs the M2 supervisor (ADR-0009). Accepted residual risk, PRD 30 |
+| **DD-45** | **Minimal built-in egress cut at v0.1.0** (amends DD-01). agenthalt ships fallback executors for process and network cuts; a composed layer (agentseatbelt/agentkernel) takes precedence when present. Where the cut cannot be made safely it reports `unsupported` | `quarantine` and the self-tamper triggers need a network cut, and agentseatbelt has no implementation yet ([ADR-0012](../adr/0012-built-in-egress-fallback.md)) |

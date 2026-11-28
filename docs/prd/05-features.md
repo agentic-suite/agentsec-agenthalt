@@ -4,7 +4,7 @@
 ecosystem layer (process tree, credentials, MCP gateway, sandbox), preserves a **hash-chained evidence snapshot**,
 returns a **proof-of-stop** receipt, and answers the **09:01 readout** — with **dual-choke, fail-closed**
 enforcement and a **CI chaos drill** that proves alert → full stop **≤ 1 s**. It absorbs the halt-trigger class of
-the shipped predecessor `ai-loopguard` as its **dead-man switch**. It owns no layer: it composes agentkeys
+the shipped predecessor `ai-loopguard` as its **dead-man switch**. It owns no layer (beyond the DD-45 stop-time fallbacks): it composes agentkeys
 (revoke), agentgate (disconnect), agentseatbelt/agentkernel (freeze), agentwatch (evidence) and agentpolicy
 (triggers).
 
@@ -124,6 +124,7 @@ The ten things agenthalt does that no single-layer switch does — the reason it
 | F30 | Offline evidence bundle | R21 | new (P1) |
 | F31 | Enrollment — `agenthalt run` supervisor + `agenthalt attach --pid` | R9 | new (DD-38) |
 | F32 | Trigger — self-tamper (store suppression, hook removal, lineage-edge deletion) | R5, R8, R9 | new (DD-36) |
+| F33 | Executor — built-in egress fallback (used only where no sandbox layer is deployed) | R1, R7 | new (DD-45) |
 
 ## P1/P2 feature additions
 
@@ -139,7 +140,8 @@ The ten things agenthalt does that no single-layer switch does — the reason it
 
 > **Non-negotiable:** agenthalt is agentic-harness-agnostic or explicitly harness-compatible. It is
 > harness-agnostic **by construction** — containment happens at the process/credential/sandbox layers, so it
-> works for every harness the ecosystem can see, including one with **zero hook surface**.
+> applies to any harness whose processes it enrolls, including one with **zero hook surface**; the compatibility
+> table states which were exercised.
 
 | Tier | Harness / ecosystem | v0.1.0 requirement |
 |---|---|---|
@@ -158,7 +160,8 @@ Full matrix: [PRD 19](19-harness-compatibility.md); the ecosystem matrix
 - **No new protocol** — the halt signal is an agentwatch event; that is the entire standard surface.
 - **No undo / rollback** — agenthalt blocks the next action; it never promises to reverse one that landed.
 - **No console/UI beyond CLI** in v1.
-- **agenthalt owns no layer** — it is not a PEP, a PDP, a gateway, a credential broker, or a sandbox.
+- **agenthalt owns no layer** — it is not a PEP, a PDP, a gateway, a credential broker, or a sandbox. Its minimal process and egress
+  executors are stop-time fallbacks, not a confinement layer (DD-45).
 - **No false claim of synchronous cancel** — blocking new actions is the hard guarantee; cancelling in-flight
   calls is best-effort and the UX says so.
 - **No claim to stop what it cannot reach** — third-party-hosted processes, static keys stored elsewhere, and

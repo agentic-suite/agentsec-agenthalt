@@ -48,7 +48,8 @@ A release is not "done" unless:
 13. The compatibility table (harness × layer × version) is published and honest — including "not supported" rows.
 14. The standards/regulatory coverage matrix (OWASP ASI, EU AI Act Art. 14, NCSC guidance, H.R. 9917 capability
     set) is regenerated from the pack tags, not hand-edited (PRD 20).
-15. A non-author completes a drill in a user test (CUJ-15) — someone who did not build agenthalt.
+15. A non-author completes a drill in a user test (CUJ-15) — someone who did not build agenthalt — running the
+    [PRD 34](34-design-partner-evaluation-guide.md) week-1 kit, and the field-test report is written from that run.
 
 ## Anti-metrics (what we refuse to optimize)
 

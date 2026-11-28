@@ -15,7 +15,7 @@ fixed **now** so the store format and the journal vocabulary never break.
 | Mode | What stops | What survives | Resumable | The question it answers |
 |---|---|---|---|---|
 | **`pause`** | New actions blocked at the choke; the process tree is **suspended** (SIGSTOP / cgroup freeze), not terminated | Session state, context, open file handles, the sandbox | **Yes** — `resume` restores full context (R7, 24 h test) | "Stop moving; I need to look." |
-| **`quarantine`** | Pause + **network cut** (sandbox egress block; open connections fail on next send) + credential **freeze** (no new issuance) | Process, state, evidence — everything but its reach | Yes (explicit un-quarantine) | "It might be compromised; contain without destroying." |
+| **`quarantine`** | Pause + **network cut** (sandbox egress block, or the built-in fallback; open connections fail on next send) + credential **freeze** (no new issuance) | Process, state, evidence — everything but its reach | Yes (explicit un-quarantine) | "It might be compromised; contain without destroying." |
 | **`kill`** | Pause + quarantine cuts, then **terminate** the tree and **revoke** every grant (agentkeys) | Only the evidence snapshot and the receipt | No — recovery is rescope-and-restart | "Stop it, everywhere, now." |
 
 ## Semantics
@@ -38,6 +38,13 @@ fixed **now** so the store format and the journal vocabulary never break.
 - **Mode history is journaled.** Every escalation, resume, and expiry is an entry; the receipt for a
   `kill` shows the full path (paused 02:31 → quarantined 02:33 → killed 02:35) — the responder's decision
   timeline is reconstructable (CUJ-6/9).
+
+## What performs the network cut
+
+agentseatbelt or agentkernel where deployed; otherwise agenthalt's built-in egress fallback (DD-45, labelled
+`attestation: self`). Where the fallback lacks privileges or, on macOS, a dedicated OS user for the run, the
+network row reports `unsupported` and the receipt is `partial-layer`. The mode never reports a network cut it
+did not make.
 
 ## What each mode never claims
 

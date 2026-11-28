@@ -27,7 +27,7 @@ run a drill, fail closed, and be honest about irreversibility.
 - Anyone who wants a **policy engine** — that is agentpolicy; agenthalt *asks* it when a trigger is a budget or
   tamper condition.
 - Anyone who wants a **sandbox / credential broker / gateway** — that is agentseatbelt/agentkernel, agentkeys,
-  agentgate; agenthalt composes them and owns none.
+  agentgate; agenthalt composes them and owns none (beyond the DD-45 stop-time fallbacks).
 - Anyone who wants **rollback** — agenthalt stops the *next* action; it never promises to undo one that landed.
 
 ## User problems

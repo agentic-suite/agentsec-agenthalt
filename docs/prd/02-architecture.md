@@ -50,7 +50,8 @@ becomes a layer. It is the emergency edge of the same control plane agentpolicy 
    hook where one exists). Subtree resolution walks these edges; **no edge, no containment**.
 4. **Executor adapters** — one per layer: `process-tree` (process group / cgroup suspend then kill),
    `credentials` (agentkeys revoke, incl. already-issued grants), `gateway` (agentgate session termination),
-   `sandbox` (agentseatbelt/agentkernel freeze + egress block), `hooks` (harness Stop/PreToolUse where
+   `sandbox` (agentseatbelt/agentkernel freeze + egress block; where neither is deployed, the built-in egress
+   fallback of DD-45), `hooks` (harness Stop/PreToolUse where
    available). Each reports `confirmed` / `requested` / `unsupported` per target.
 5. **Evidence collector** — on halt, snapshots the scene: the agentwatch trace window, the process tree
    (lineage), and open network connections; writes them as a **hash-chained, timestamped** artifact with an
@@ -101,7 +102,8 @@ One logical operation, several bindings (library / CLI / MCP / HTTP):
   (before the call leaves). One check the model can talk past is a suggestion.
 - **v0.1.0 reality (stated, not hidden):** until agentgate v1.0 (Wave 1) the gateway half reports `unsupported`
   (DD-18). On a zero-hook harness the "runtime" half is enforced **below** the agent, not inside it:
-  scope-based suspension of the process tree plus the sandbox egress block are what deny the next action;
+  scope-based suspension of the process tree plus the egress block (sandbox, or the DD-45 fallback) are what
+  deny the next action;
   hook/library reads of the store are accelerants where a surface exists. Receipts on such stacks report
   `partial-layer`, never `complete`.
 - **Fail closed:** halt store unreachable → high-impact actions are **denied**, never allowed. Adapter failure →
@@ -120,8 +122,9 @@ milestone's design doc before code.
 | **Runtime choke** | A library/hook read of the store where a surface exists; on zero-hook harnesses, scope-based suspension + egress block (see *Dual choke* above) | M1, M3, M8 |
 | **Lineage capture on macOS** | Process groups are escapable (`setsid`, double-fork into a new session). The supervisor adds ancestry polling + session/uid scoping; anything that leaves the observed set is a `lineage_gap` / `orphans[]` finding. Endpoint-Security-grade capture is agentseatbelt's job where deployed (RK-23) | M2, M3 |
 | **Survivor detection** | A post-halt probe over the halt window: liveness of every enumerated member plus outbound-connection observation (sandbox/egress logs where deployed; `lsof` / `/proc/net` sampling otherwise). The receipt records the probe's method and observer (`subtree.survivor_probe`): "no call observed" is only as strong as the observer | M8 |
-| **Confirmation signing** | Each composed layer signs its own confirmations with its own key. Where agenthalt's built-in OS executor performs the cut (no agentseatbelt/agentkernel), agenthalt signs with a separate executor key and labels the confirmation `attestation: self`, so a verifier can tell self-attested cuts from third-party ones (DD-40) | M4, M6 |
+| **Confirmation signing** | Each composed layer signs its own confirmations with its own key. Where agenthalt's built-in OS or egress executor performs the cut (no agentseatbelt/agentkernel), agenthalt signs with a separate executor key and labels the confirmation `attestation: self`, so a verifier can tell self-attested cuts from third-party ones (DD-40) | M4, M6 |
 | **Readout & compensation sources** | Built only from observed data: compensation items from the agentwatch trace window (tool calls with a known side-effect class); queued work and downstream agents from agentwatch delegation events; siblings from the lineage registry. Without agentwatch these fields are marked `unavailable` in `readout.coverage`, never shown as an empty list | M5, M6 |
+| **Built-in egress fallback** (DD-45) | Linux: nftables rules matching the enrolled run's cgroup. macOS: pf matches by user, not by process tree, so the cut needs the run under a dedicated OS user, and existing connection states must be flushed. Both need elevated privileges. Without them the cut reports `unsupported`; it never blocks the operator's own user. To be verified in the M3 design | M3, M9 |
 | **Remote trigger listener** | `haltd` binds to localhost by default; webhook/PagerDuty/Slack listeners are opt-in, authenticated, rate-limited, and capped at `max_scope: agent`. A listener failure never affects local CLI halts or the fail-closed choke ([PRD 30](30-threat-model.md)) | M7 |
 
 ## Standards

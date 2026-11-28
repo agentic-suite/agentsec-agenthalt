@@ -12,7 +12,7 @@ detector, a policy engine, a gateway, a credential broker, a sandbox, or a time 
 |---|---|---|
 | **Detection** (spotting a rogue agent, injection, exfiltration) | Detection and enforcement stay separate; wiring a switch to a noisy detector breaks legitimate work | agentwatch (events), agentpolicy (budgets), agentgate (tool verdicts), the org's SIEM |
 | **Policy decisions** (whether a halt *should* fire on a condition) | A composition tool that grew a policy engine would be two products | agentpolicy (the PDP); agenthalt *consumes* its triggers |
-| **Enforcement-layer ownership** (being the proxy, the broker, the sandbox) | agenthalt drives layers through their documented action surfaces; it never becomes one | agentgate (disconnect), agentkeys (revoke), agentseatbelt/agentkernel (freeze) |
+| **Enforcement-layer ownership** (being the proxy, the broker, the sandbox) | agenthalt drives layers through their documented action surfaces; it never becomes one. The stop-time process and egress fallbacks (DD-45) cut on halt only; they confine nothing | agentgate (disconnect), agentkeys (revoke), agentseatbelt/agentkernel (freeze) |
 | **Credential issuance / identity** | The stop consumes identity mapping; it never issues or brokers identity | agentkeys; the org's IdP |
 | **ML / classifiers in the stop path** | Determinism is a product requirement; the model never gets a vote | — |
 | **Rollback / undo** | An already-sent email cannot be un-sent; pretending otherwise is the category's biggest lie | Nobody — irreversibility is stated, and the receipt carries the compensation list (R13) |

@@ -43,7 +43,7 @@ drills/<name>/
 | # | Case | What it proves | Maps to | Golden asserts |
 |---|---|---|---|---|
 | 1 | **`replit-stop`** | The composed stop, end-to-end, on the clock (Demo 1) | K1/R1/R2, CUJ-1, C-02/C-03 | status `complete` with agentgate, `partial-layer` → `PASS (degraded)` without it (DD-18); every reachable confirmation present; survivors `[]`; stop ≤ 1 s p95 |
-| 2 | **`hostile-harness`** | Containment with every hook removed (Demo 2, the Plugin4Shell case) | K6/R5, CUJ-13, C-05 | `complete` with hook surface reported absent; zero dependence on hooks |
+| 2 | **`hostile-harness`** | Containment with every hook removed (Demo 2, the Plugin4Shell case) | K6/R5, CUJ-13, C-05 | status `complete` with agentgate, `partial-layer` → `PASS (degraded)` without it (DD-18); hook surface reported absent; zero dependence on hooks |
 | 3 | **`credential-residue`** | Revocation confirmed for brokered grants; static keys surfaced honestly (Demo 3) | CUJ-5, R20 | `confirmed` for grant A; `unrevocable_grants` lists grant B with window |
 | 4 | **`panic-key`** | The local red button; non-interactive invocation refused | CUJ-12, RK-5 | halt from interactive session; non-interactive attempt journaled + rejected |
 | 5 | **`spawn-race`** | A child spawned mid-halt is choke-blocked by scope inheritance | [PRD 27](27-lineage-model.md) post-halt spawn rule | post-halt child never acts; blocked-by-scope event logged |
