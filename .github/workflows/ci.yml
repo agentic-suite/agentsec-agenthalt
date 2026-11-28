@@ -40,12 +40,21 @@ jobs:
         run: mypy
 
       - name: Tests + coverage (>= 95%)
-        # These tests freeze real processes, so a bug can hang instead of fail: name the test, dump the
-        # stacks after 60 s, and give up rather than burn runner minutes.
-        timeout-minutes: 8
-        run: >-
-          pytest -v -o faulthandler_timeout=60
-          --cov=agenthalt --cov-report=term-missing --cov-fail-under=95
+        # These tests freeze real processes. A watchdog beside pytest (not above it) reports any
+        # process outside the test sandboxes that stays stopped, names the test, and continues it,
+        # so a stray SIGSTOP cannot wedge the runner and the log always comes back.
+        timeout-minutes: 10
+        env:
+          AGENTHALT_TEST_STAMP: ${{ runner.temp }}/current-test
+        run: |
+          python .github/ci/stop_watchdog.py "$RUNNER_TEMP/watchdog.log" "$AGENTHALT_TEST_STAMP" 420 &
+          watchdog=$!
+          rc=0
+          pytest -v -o faulthandler_timeout=60 \
+            --cov=agenthalt --cov-report=term-missing --cov-fail-under=95 || rc=$?
+          kill "$watchdog" 2>/dev/null || true
+          echo "--- stop watchdog"; cat "$RUNNER_TEMP/watchdog.log"
+          exit "$rc"
 
   install-smoke:
     name: pip install smoke (fresh, no cache)
