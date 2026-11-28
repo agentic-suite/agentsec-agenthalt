@@ -7,11 +7,7 @@ given the halt store and does not choose targets, order or mode.
 from __future__ import annotations
 
 import contextlib
-import hashlib
-import hmac
-import json
 import os
-import secrets
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -23,6 +19,7 @@ from typing import Any
 from agenthalt.config import ConfigError
 from agenthalt.logs import get_logger
 from agenthalt.observe import Proc
+from agenthalt.signing import OWN_SIGNERS, Signer, enforcement_payload
 
 __all__ = [
     "ENTRY_POINT_GROUP",
@@ -36,13 +33,13 @@ __all__ = [
     "Result",
     "load_adapters",
     "run_phase",
+    "seal",
 ]
 
 ENTRY_POINT_GROUP = "agenthalt.executors"
 STATUSES = ("confirmed", "requested", "unsupported", "failed")
-LAYERS = ("process", "sandbox")
-PHASES = ("suspend", "block", "terminate")
-SIGNED_BY = "agenthalt-executor"
+LAYERS = ("process", "sandbox", "credentials", "gateway")
+PHASES = ("suspend", "block", "terminate", "revoke", "freeze", "disconnect")
 GRACE_S = 2.0
 """How long past the deadline a phase may still run before it is abandoned."""
 _log = get_logger("executors")
@@ -115,50 +112,40 @@ class Confirmation:
 
 
 def _payload(halt_id: str, item: Confirmation) -> bytes:
-    body = {k: v for k, v in item.to_dict().items() if k not in ("signature", "signed_by")}
-    return json.dumps({"halt_id": halt_id, **body}, sort_keys=True, separators=(",", ":")).encode()
+    return enforcement_payload(halt_id, item.layer, item.phase, item.target, item.status)
 
 
 class ExecutorSigner:
-    """Self-attestation with a local executor key (provisional until WBS 4.6, DD-49)."""
+    """Signs agenthalt's own confirmations and checks everyone's (M4 design §5, DD-54).
+
+    agenthalt's executors sign with the executor key (``attestation: self``). A third-party
+    enforcement point signs :func:`agenthalt.signing.enforcement_payload` with its own key, which
+    the operator publishes under ``<home>/keys/published/<signed_by>.pub``.
+    """
 
     def __init__(self, home: Path) -> None:
-        self.path = Path(home) / "keys" / "executor.key"
+        self.signer = Signer(home)
+        self.trust = self.signer.trust
 
-    def _key(self, *, create: bool) -> bytes:
-        if create and not self.path.exists():
-            self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-            draft = self.path.with_name(f"{self.path.name}.{os.getpid()}.{secrets.token_hex(4)}")
-            fd = os.open(draft, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            with os.fdopen(fd, "w") as handle:
-                handle.write(secrets.token_hex(32))
-            try:  # appears complete or not at all; the first writer wins
-                with contextlib.suppress(FileExistsError):
-                    os.link(draft, self.path)
-            finally:
-                os.unlink(draft)
-        key = bytes.fromhex(self.path.read_text().strip())
-        if len(key) < 32:
-            raise ValueError("executor key is too short")
-        return key
+    def ensure(self) -> None:
+        """Create the key as the invoking user, before any privileges are raised."""
+        with contextlib.suppress(Exception):
+            self.signer.ensure()
 
-    def sign(self, halt_id: str, item: Confirmation) -> tuple[str, str] | None:
-        try:
-            key = self._key(create=True)
-        except (OSError, ValueError) as exc:
-            _log.error("sign.unavailable", extra={"fields": {"error": str(exc)}})
-            return None
-        return SIGNED_BY, hmac.new(key, _payload(halt_id, item), hashlib.sha256).hexdigest()
+    def sign_many(
+        self, halt_id: str, items: Sequence[Confirmation]
+    ) -> list[tuple[str, str] | None]:
+        return self.signer.sign_many([_payload(halt_id, item) for item in items])
 
     def verify(self, halt_id: str, item: Confirmation) -> bool:
-        if item.signature is None:
+        if item.signature is None or item.signed_by is None:
             return False
-        try:
-            key = self._key(create=False)
-        except (OSError, ValueError):
+        payload = _payload(halt_id, item)
+        if item.attestation == "self":
+            return self.signer.verify(item.signed_by, payload, item.signature)
+        if item.signed_by in OWN_SIGNERS:  # our own word never counts as an independent one
             return False
-        good = hmac.new(key, _payload(halt_id, item), hashlib.sha256).hexdigest()
-        return hmac.compare_digest(good, item.signature)
+        return self.trust.verify(item.signed_by, payload, item.signature)
 
 
 # --------------------------------------------------------------------------- registry
@@ -262,9 +249,8 @@ def confirmation(
     result: Result,
     *,
     attestation: str,
-    signer: ExecutorSigner | None,
 ) -> Confirmation:
-    """A signable confirmation. ``confirmed`` without a signature becomes ``requested``."""
+    """An unsealed confirmation: a third party's own signature is carried; ours comes in seal()."""
     item = Confirmation(
         layer=layer,
         phase=phase,
@@ -274,17 +260,28 @@ def confirmation(
         at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         note=result.note,
     )
-    if attestation == "third_party":
-        signed = (
-            (result.signed_by, result.signature) if result.signed_by and result.signature else None
-        )
-    else:
-        signed = None
-        with contextlib.suppress(AttributeError):
-            signed = signer.sign(halt_id, item) if signer is not None else None
-    if signed is None:
-        if item.status != "confirmed":
-            return item
-        item = replace(item, status="requested", note=f"{item.note} (unsigned)".strip())
-        return item
-    return replace(item, signed_by=signed[0], signature=signed[1])
+    if attestation == "third_party" and result.signed_by and result.signature:
+        item = replace(item, signed_by=result.signed_by, signature=result.signature)
+    return item
+
+
+def seal(
+    halt_id: str, items: Sequence[Confirmation], signer: ExecutorSigner | None
+) -> list[Confirmation]:
+    """Sign ours, verify theirs. ``confirmed`` without a good signature becomes ``requested``."""
+    out = list(items)
+    own = [index for index, item in enumerate(out) if item.attestation == "self"]
+    signed = signer.sign_many(halt_id, [out[i] for i in own]) if signer is not None else []
+    for index, found in zip(own, signed or [None] * len(own), strict=True):
+        if found is not None:
+            out[index] = replace(out[index], signed_by=found[0], signature=found[1])
+    for index, item in enumerate(out):
+        if item.attestation != "third_party" or item.signature is None:
+            continue
+        if signer is None or not signer.verify(halt_id, item):
+            note = f"{item.note} (signature not verified)".strip()
+            out[index] = replace(item, signed_by=None, signature=None, note=note)
+    for index, item in enumerate(out):
+        if item.status == "confirmed" and item.signature is None:
+            out[index] = replace(item, status="requested", note=f"{item.note} (unsigned)".strip())
+    return out

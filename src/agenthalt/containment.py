@@ -12,10 +12,11 @@ import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractContextManager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from agenthalt.credentials import Grant, unrevocable
 from agenthalt.cutlog import LAYERS, CutLog, CutWriter
 from agenthalt.executors import (
     GRACE_S,
@@ -26,6 +27,7 @@ from agenthalt.executors import (
     Result,
     confirmation,
     run_phase,
+    seal,
 )
 from agenthalt.exit_codes import ReceiptStatus, status_for
 from agenthalt.journal import JournalError
@@ -84,6 +86,8 @@ class Cut:
     complete: bool = True
     lineage_verified: bool = False
     reason: str | None = None
+    unrevocable: list[dict[str, Any]] = field(default_factory=list)
+    """Grants nothing here can revoke, with how long they stay usable (WBS 4.2)."""
 
     def layers(self) -> dict[str, str]:
         """One word per layer: the worst final status among its targets."""
@@ -119,6 +123,7 @@ class Cut:
             "complete": self.complete,
             "lineage_verified": self.lineage_verified,
             "reason": self.reason,
+            "unrevocable_grants": self.unrevocable,
         }
 
 
@@ -258,6 +263,17 @@ class Containment:
                 out.append([Result(n, "requested", "the adapter did not answer") for n in names])
         return out
 
+    def _aside(
+        self, calls: Sequence[tuple[str, str, Sequence[Any], Sequence[str]]], ctx: Context
+    ) -> tuple[threading.Thread, list[list[Result]]]:
+        """Start the composed cuts on their own thread; the process path does not wait for them."""
+        outcomes: list[list[Result]] = []
+        thread = threading.Thread(
+            target=lambda: outcomes.extend(self._phases(calls, ctx) if calls else []), daemon=True
+        )
+        thread.start()
+        return thread, outcomes
+
     def _record(
         self,
         cut: Cut,
@@ -270,15 +286,10 @@ class Containment:
         adapter = self.adapters.get(layer)
         attestation = getattr(adapter, "attestation", "self")
         for result in results:
+            if attestation == "third_party" and result.signed_by != getattr(adapter, "name", None):
+                result = replace(result, signed_by=None, signature=None)  # not its own name
             cut.confirmations.append(
-                confirmation(
-                    halt.halt_id,
-                    layer,
-                    phase,
-                    result,
-                    attestation=attestation,
-                    signer=self.signer,
-                )
+                confirmation(halt.halt_id, layer, phase, result, attestation=attestation)
             )
             if result.undo is not None and writer is not None and layer in LAYERS:
                 writer.cut(layer, result.undo)  # adapters that did not record as they went
@@ -291,11 +302,14 @@ class Containment:
     def cut(self, halt: HaltState) -> Cut:
         cut = Cut()
         deadline = time.monotonic() + self.deadline_ms / 1000
-        self._unsupported(cut, halt, "gateway", "agentgate is not composed (DD-18)")
-        if halt.mode is not Mode.PAUSE:
-            self._unsupported(cut, halt, "credentials", "credential revoke and freeze land in M4")
+        if self.signer is not None:
+            self.signer.ensure()  # as the invoking user, before anything is elevated
         if halt.scope.kind not in _TARGET_KINDS:
-            self._unsupported(cut, halt, "process", f"a {halt.scope.kind} halt names no process")
+            for layer in ("gateway", "process"):
+                self._unsupported(cut, halt, layer, f"a {halt.scope.kind} halt names no {layer}")
+            if halt.mode is not Mode.PAUSE:
+                self._unsupported(cut, halt, "credentials", "no credentials for this scope")
+            cut.confirmations = seal(halt.halt_id, cut.confirmations, self.signer)
             return cut
         edges: list[dict[str, Any]] = []
         writer = self.cutlog.writer(halt.to_dict())  # opened before any elevation
@@ -309,12 +323,23 @@ class Containment:
         if writer.failed:
             cut.complete, cut.reason = False, f"{writer.failed}; lift may not undo this halt"
         cut.undo = self.cutlog.read(halt.halt_id).pending
+        cut.confirmations = seal(halt.halt_id, cut.confirmations, self.signer)
+        self._unvouched(cut)
         if edges:
             with contextlib.suppress(LineageError, JournalError, OSError):
                 self.registry.append_edges(
                     self.registry.register_adapter("process-observer", "process"), edges
                 )
         return cut
+
+    def _unvouched(self, cut: Cut) -> None:
+        """A stop nothing could sign is not confirmed, so the process counts as a survivor."""
+        final = {c.target: c for c in cut.confirmations if c.layer == "process"}
+        listed = {s["id"] for s in cut.survivors}
+        for member in cut.members:
+            item = final.get(member["id"])
+            if item is not None and item.status != "confirmed" and member["id"] not in listed:
+                cut.survivors.append({"id": member["id"], "pid": member["pid"], "why": item.note})
 
     def _look(
         self,
@@ -359,6 +384,7 @@ class Containment:
         if network and "sandbox" not in self.adapters:
             self._unsupported(cut, halt, "sandbox", "no sandbox executor")
             network = False
+        composed = self._composed(cut, halt, graph, nodes)
 
         everyone = {m.node: m for m in members}
         table: dict[int, Proc] | None = procs
@@ -368,6 +394,7 @@ class Containment:
                 calls.append(("process", "suspend", members, [m.node for m in members]))
             if network and members:
                 calls.append(("sandbox", "block", members, sorted({m.run for m in members})))
+            aside, outcomes = self._aside(composed, ctx)  # never holds up the stop
             results = self._phases(calls, ctx)
             for (layer, phase, _, _), found in zip(calls, results, strict=True):
                 self._record(cut, halt, layer, phase, found, writer)
@@ -414,6 +441,45 @@ class Containment:
             self._survivors(cut, halt, members, table)
         if halt.mode is Mode.KILL and not quiet and not cut.survivors and cut.complete:
             self._retire(cut, halt, ctx, writer)
+        aside.join()  # bounded: each phase is abandoned past its own cap
+        for (layer, phase, _, _), found in zip(composed, outcomes, strict=False):
+            self._record(cut, halt, layer, phase, found, writer)
+
+    def _composed(
+        self, cut: Cut, halt: HaltState, graph: Graph, nodes: Sequence[str]
+    ) -> list[tuple[str, str, Sequence[Any], Sequence[str]]]:
+        """The gateway and credential cuts, run alongside the process ones (DD-05)."""
+        calls: list[tuple[str, str, Sequence[Any], Sequence[str]]] = []
+        runs = sorted({n for n in nodes if graph.meta.get(n, {}).get("enrollment")})
+        if "gateway" in self.adapters and runs:
+            calls.append(("gateway", "disconnect", runs, runs))
+        else:
+            why = "agentgate is not deployed (DD-18)" if runs else "no enrolled run to disconnect"
+            self._unsupported(cut, halt, "gateway", why)
+        if halt.mode is Mode.PAUSE:
+            return calls  # pause freezes; credentials are left as they are
+        grants: dict[str, Grant] = {}
+        for node in nodes:
+            for ref in graph.meta.get(node, {}).get("grants", ()) or ():
+                if isinstance(ref, str):
+                    grants.setdefault(ref, Grant(ref, node))
+        cut.unrevocable = [unrevocable(r) for r in sorted(grants) if r.startswith("static:")]
+        if not grants:
+            why = "no credentials declared for this subtree (enroll with --grant)"
+            self._unsupported(cut, halt, "credentials", why)
+        elif "credentials" not in self.adapters:
+            for ref in sorted(grants):
+                self._record(
+                    cut,
+                    halt,
+                    "credentials",
+                    "revoke",
+                    [Result(ref, "unsupported", "no credential executor")],
+                )
+        else:
+            phase = "revoke" if halt.mode is Mode.KILL else "freeze"
+            calls.append(("credentials", phase, list(grants.values()), sorted(grants)))
+        return calls
 
     def _survivors(
         self,
@@ -491,35 +557,44 @@ class Containment:
         results: list[Result] = []
         process: list[Mapping[str, Any]] = []
         try:
+            process_items = items["process"]
             if halt.mode is Mode.KILL:
-                for item in items["process"]:
+                for item in process_items:
                     writer.done("process", item)  # a kill continues nothing
-            elif items["process"]:
+                process_items = []
+            guarded = [("process", i) for i in process_items]
+            guarded += [("gateway", i) for i in items["gateway"]]
+            gateway: list[Mapping[str, Any]] = []
+            if guarded:
                 read = self.registry.read()
                 unsure = not read.complete or bool(read.findings)
                 graph = Graph(read.edges)
-                for item in items["process"]:
+                for layer, item in guarded:
                     run = str(item.get("run"))
                     name = f"cgroup:{run}" if "freeze" in item else ""
                     name = name or f"proc_{item.get('pid')}_{item.get('start')}"
+                    if layer == "gateway":
+                        name = f"gateway:{run}"
                     targets = [lineage_target(graph, n) for n in (run, *graph.ancestors(run))]
                     covering = [h for h in remaining if any(h.scope.matches(t) for t in targets)]
                     if covering:
                         for other in covering:  # it is theirs to release now
                             heir = self.cutlog.writer(other.to_dict())
-                            heir.cut("process", item)
+                            heir.cut(layer, item)
                             heir.close()
-                        writer.done("process", item)
-                        why = f"stays frozen: also covered by {covering[0].halt_id}"
+                        writer.done(layer, item)
+                        held = "frozen" if layer == "process" else "disconnected"
+                        why = f"stays {held}: also covered by {covering[0].halt_id}"
                         results.append(Result(name, "requested", why))
                     elif unsure and remaining:
                         why = "stays frozen: lineage cannot be trusted and other halts are active"
                         results.append(Result(name, "failed", why))
                     else:
-                        process.append(item)
+                        (process if layer == "process" else gateway).append(item)
             process.sort(key=lambda item: "freeze" not in item)  # thaw before continuing
             with self.elevate():
-                work = [("sandbox", i) for i in items["sandbox"]]
+                work = [("gateway", i) for i in gateway]
+                work += [(layer, i) for layer in ("credentials", "sandbox") for i in items[layer]]
                 for layer, entry in [*work, *(("process", i) for i in process)]:
                     found = self._release_one(layer, entry, ctx)
                     results.extend(found)

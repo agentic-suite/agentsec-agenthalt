@@ -17,6 +17,7 @@ from agenthalt.executors import (
     confirmation,
     load_adapters,
     run_phase,
+    seal,
 )
 
 
@@ -108,49 +109,35 @@ def test_a_broken_adapter_yields_failed(returned: Any) -> None:
     assert [r.status for r in run_phase(Broken(), "suspend", [], ["a"], ctx())] == ["failed"]
 
 
+def mk(status: str = "confirmed", attestation: str = "self", **kw: Any) -> Any:
+    return confirmation(
+        "hlt_1", "process", "suspend", Result("a", status, **kw), attestation=attestation
+    )
+
+
 def test_confirmed_is_signed_and_verifiable(tmp_path: Path) -> None:
     signer = ExecutorSigner(tmp_path)
-    item = confirmation(
-        "hlt_1", "process", "suspend", Result("a", "confirmed"), attestation="self", signer=signer
-    )
+    (item,) = seal("hlt_1", [mk()], signer)
     assert item.status == "confirmed" and item.signed_by == "agenthalt-executor"
-    assert signer.path.stat().st_mode & 0o777 == 0o600
+    assert signer.signer.key.stat().st_mode & 0o777 == 0o600
     assert signer.verify("hlt_1", item)
     assert not signer.verify("hlt_2", item)
     assert not signer.verify("hlt_1", replace(item, target="b"))
+    assert not signer.verify("hlt_1", replace(item, status="failed"))
     assert not signer.verify("hlt_1", replace(item, signature=None))
     assert not ExecutorSigner(tmp_path / "elsewhere").verify("hlt_1", item)
 
 
-@pytest.mark.parametrize("signer", [None, "unreadable"])
-def test_no_signature_means_not_confirmed(tmp_path: Path, signer: str | None) -> None:
-    hook = None
-    if signer:
-        hook = ExecutorSigner(tmp_path)
-        hook.path.parent.mkdir()
-        hook.path.write_text("abcd")  # too short
-    done = confirmation(
-        "hlt_1", "process", "suspend", Result("a", "confirmed"), attestation="self", signer=hook
-    )
+def test_no_signature_means_not_confirmed(tmp_path: Path) -> None:
+    done, failed = seal("hlt_1", [mk(), mk("failed")], None)
     assert done.status == "requested" and "unsigned" in done.note and done.signature is None
-    failed = confirmation(
-        "hlt_1", "process", "suspend", Result("a", "failed"), attestation="self", signer=hook
-    )
     assert failed.status == "failed"
 
 
-def test_third_party_must_bring_its_own_signature(tmp_path: Path) -> None:
+def test_third_party_must_bring_a_signature_that_verifies(tmp_path: Path) -> None:
     signer = ExecutorSigner(tmp_path)
-    unsigned = confirmation(
-        "h", "sandbox", "block", Result("a", "confirmed"), attestation="third_party", signer=signer
-    )
+    (unsigned,) = seal("h", [mk(attestation="third_party")], signer)
     assert unsigned.status == "requested"
-    signed = confirmation(
-        "h",
-        "sandbox",
-        "block",
-        Result("a", "confirmed", signed_by="agentseatbelt", signature="s"),
-        attestation="third_party",
-        signer=signer,
-    )
-    assert signed.status == "confirmed" and signed.signed_by == "agentseatbelt"
+    forged = mk(attestation="third_party", signed_by="agentseatbelt", signature="s")
+    (rejected,) = seal("h", [forged], signer)
+    assert rejected.status == "requested" and "not verified" in rejected.note

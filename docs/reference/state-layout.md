@@ -17,7 +17,9 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
     seg-000001.jsonl        0600  hash-chained, authenticated records
     .lock                   0600  serialises lineage writers
   keys/lineage/             0700  one HMAC key per lineage adapter (M2)
-  keys/executor.key         0600  signs the built-in executors' confirmations (M3)
+  keys/executor_ed25519     0600  signs agenthalt's own confirmations (M4; `.pub` beside it)
+  keys/published/           0700  verification keys, `<signer>.pub` (M4)
+  keys/executor.key         0600  HMAC fallback where `ssh-keygen` is missing
   keys/users/<run id>       0644  root-owned note of a `run --user` uid (M3)
   cuts/<halt id>.jsonl      0600  what each halt changed, written before it changes it (M3)
   halts/<halt_id>/                halt, subtree, stop plan, executions, confirmations (M3-M6)

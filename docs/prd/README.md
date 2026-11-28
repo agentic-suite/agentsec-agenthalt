@@ -28,7 +28,7 @@ every layer the ecosystem owns (process tree, credentials, MCP gateway, sandbox)
 | 08 | [Risks](08-risks.md) | Risk register (RK-1..RK-22), hard parts, triggers to revisit, open questions |
 | 09 | [Roadmap](09-roadmap.md) | Versions, compatibility by version, migration/deprecation, release cadence, ecosystem dependency |
 | 10 | [Feature Parity](10-feature-parity.md) | Every absorbed `ai-loopguard` / BehaviorGuard capability → delivered / delegated / waived; the documented fail-open→fail-closed inversion |
-| 11 | [Decisions](11-decisions.md) | Accepted decisions (DD-01..DD-53: design, scope, technical, governance) |
+| 11 | [Decisions](11-decisions.md) | Accepted decisions (DD-01..DD-58: design, scope, technical, governance) |
 | 12 | [Traceability](12-traceability.md) | Requirements → CUJ → WBS → test → parity; reverse CUJ map; decisions → requirements |
 | 13 | [Non-Functional Requirements](13-non-functional-requirements.md) | Speed (≤1 s), determinism, fail-closed safety, portability, security, auditability, cost, observability |
 | 14 | [Non-Goals](14-non-goals.md) | Consolidated non-goals with owners; what agenthalt is *not* claiming |

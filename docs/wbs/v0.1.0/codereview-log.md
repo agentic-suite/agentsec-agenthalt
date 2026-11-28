@@ -152,6 +152,22 @@ Format: `#<n> [<milestone> Review] <area> — <finding> → <resolution> (<commi
   `mypy --strict` clean. CI skips the Linux-root tests; the container run is their evidence.
 - **Resolution:** all findings resolved or listed above as accepted.
 
+### M4 — Credential, gateway & sandbox executors (4.CR)
+
+- **Scope:** signing, credential executor, composed layers, grants, lift; one independent read-only review.
+- **Findings:**
+  - #1 [M4 Review] deadline — a slow agentkeys or gateway delayed `SIGKILL` by seconds → composed cuts run beside the stop.
+  - #2 [M4 Review] credentials — serial revokes lost results of the ones that succeeded → parallel, one budget, errors per grant.
+  - #3 [M4 Review] enrollment — `attach --grant` on an enrolled process dropped the grants silently → refused.
+  - #4 [M4 Review] signing — our own signature verified as a third party's → refused; an adapter signs only under its own name.
+  - #5 [M4 Review] lift — a gateway cut another halt still covered was reconnected → same covering check as processes.
+  - #6 [M4 Review] sudo — agentkeys not found on `secure_path`; root groups kept → also look in `~/.local/bin`; drop groups.
+  - #7 [M4 Review] signing — a missing public half left every halt unsigned → rebuilt from the private key.
+- **Accepted limits:** under sudo an agentkeys in a venv, or a custom `AGENTKEYS_HOME` stripped by sudo, is not found
+  (reported `unsupported`); published keys are not bound to a layer; fixes were not re-reviewed.
+- **Gates:** macOS 623 passed, 5 skipped · coverage 98% (M4 modules 96% or higher) · Linux container root 624 passed, non-root 620 passed · `ruff` zero · `mypy --strict` clean.
+- **Resolution:** all findings resolved or listed above as accepted.
+
 <!--
 ### M0 — Foundation, CLI & halt journal (0.CR)
 

@@ -91,8 +91,8 @@ graph**, not a process:
 > **Planned interface (v0.1.0).** The commands below are the documented contract. In this development build
 > `doctor`, `journal`, `status`, `lift`, `run`, `attach` and `halt`/`pause`/`quarantine`/`kill` run: a halt
 > blocks at the runtime choke and [freezes or kills enrolled processes](docs/reference/executors.md); on Linux as
-> root it also cuts their network. Credentials and the gateway are not yet covered, so the best outcome is
-> `partial-layer` (exit 2). The remaining commands are reserved and exit `5`.
+> root it also cuts their network. `kill` also revokes [declared agentkeys grants](docs/reference/executors.md#credentials). The gateway is
+> not yet covered, so the best outcome is `partial-layer` (exit 2). The remaining commands are reserved and exit `5`.
 
 ```sh
 pip install agentsec-agenthalt

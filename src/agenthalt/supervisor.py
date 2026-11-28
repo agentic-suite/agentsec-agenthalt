@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 from agenthalt.choke import RuntimeChoke
+from agenthalt.credentials import parse_grant
 from agenthalt.ids import new_halt_id, validate_id
 from agenthalt.journal import Journal, JournalError
 from agenthalt.lineage import AdapterCredential, LineageError, LineageRegistry
@@ -244,6 +245,7 @@ class Supervisor:
         actor: str = "agenthalt",
         poll_s: float = 0.25,
     ) -> None:
+        self._grants: list[str] = []
         self.home = Path(home).resolve()
         self.journal = Journal(self.home, segment_max_entries=segment_max_entries)
         self.registry = LineageRegistry(
@@ -329,7 +331,12 @@ class Supervisor:
     # ------------------------------------------------------------------- run
 
     def run(
-        self, command: Sequence[str], *, name: str | None = None, user: str | None = None
+        self,
+        command: Sequence[str],
+        *,
+        name: str | None = None,
+        user: str | None = None,
+        grants: Sequence[str] = (),
     ) -> RunResult:
         if not command:
             raise EnrollmentError("no command given")
@@ -338,6 +345,7 @@ class Supervisor:
             raise EnrollmentError(f"command not found: {command[0]}")
         exe = os.path.abspath(exe)
         name = validate_id(name or _default_name(command[0]), what="agent name")
+        self._grants = [parse_grant(g) for g in grants]
         spec = None if user is None else resolve_user(user, self.home)
         run_id = "run_" + new_halt_id()[4:]
         group: tuple[Path, str] | None = None
@@ -460,6 +468,8 @@ class Supervisor:
             meta["cgroup"] = group[1]
         if spec is not None:
             meta["user"] = spec.name
+        if self._grants:
+            meta["grants"] = list(self._grants)
         known_parent = parent if parent is not None and parent in graph else supervisor_id
         self.registry.append_edges(
             self._adapter(),
@@ -540,7 +550,9 @@ class Supervisor:
 
     # ------------------------------------------------------------------- attach
 
-    def attach(self, pid: int, *, name: str | None = None) -> AttachResult:
+    def attach(
+        self, pid: int, *, name: str | None = None, grants: Sequence[str] = ()
+    ) -> AttachResult:
         procs = self._snapshot()
         target = procs.get(pid)
         if target is None:
@@ -549,6 +561,7 @@ class Supervisor:
             raise EnrollmentError(f"process {pid} belongs to another user; nothing enrolled")
         if name is not None:
             validate_id(name, what="agent name")
+        self._grants = [parse_grant(g) for g in grants]
         try:
             with effective(*invoking_ids()):
                 return self._attach(target, procs, name or f"pid-{pid}")
@@ -558,6 +571,11 @@ class Supervisor:
     def _attach(self, target: Proc, procs: dict[int, Proc], name: str) -> AttachResult:
         graph = self._graph()
         existing = graph.process_index().get((target.pid, target.start))
+        if existing is not None and self._grants:
+            raise EnrollmentError(
+                f"pid {target.pid} is already enrolled; grants can only be declared when a process "
+                "is first enrolled, so none were recorded"
+            )
         if existing is not None:
             verified = existing in self.registry.read().verified
             return AttachResult(existing, False, verified, tuple(graph.walk([existing])[0]))
@@ -576,6 +594,8 @@ class Supervisor:
             "uid": target.uid,
             "containment": "observed",
         }
+        if self._grants:
+            meta["grants"] = list(self._grants)
         credential = self._adapter()
         self.registry.append_edges(
             credential,

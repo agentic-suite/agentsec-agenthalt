@@ -42,12 +42,12 @@ kill-trigger interface (capability-gated); the **adapter degradation matrix** (`
 | 4.CI | Commit & push | On the feature branch | git | pushed | — | — | — |
 | 4.W | Update WBS | Checkpoint appended to the index Progress | WBS | checkpoint recorded | — | — | — |
 
-**Exit criteria**
+**Exit criteria** (4.3 and 4.4 ship the `unsupported` path only until `agentgate` and `agentkernel` exist, DD-57)
 
-- [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
-- [ ] The composed stop cuts process + credentials + gateway + sandbox; unrevocable grants are reported honestly
-- [ ] An absent layer reports `unsupported` → receipt `partial-layer` (never a silent skip)
-- [ ] Confirmations are signed and verifiable
+- [x] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+- [x] The composed stop cuts process + credentials + gateway + sandbox; unrevocable grants are reported honestly
+- [x] An absent layer reports `unsupported` → receipt `partial-layer` (never a silent skip)
+- [x] Confirmations are signed and verifiable
 
 ---
 

@@ -91,3 +91,27 @@ its own signature or its `confirmed` is recorded as `requested`. An adapter that
   is a very small pid-reuse window between the identity check and the signal.
 - The network cut rejects outbound traffic only.
 - Empty `agenthalt-run_*` cgroup directories can be left behind after a kill.
+
+## Credentials
+
+Declare what an agent holds when you enroll it:
+
+```sh
+agenthalt run --name release-bot \
+  --grant agentkeys:agent:release-bot --grant static:GH_PAT@2026-12-01 -- ./agent
+```
+
+`kill` runs `agentkeys revoke` for each `agentkeys:` grant; this cannot be undone. A `static:` key cannot be
+revoked from here and is listed as `UNREVOCABLE` with how long it stays usable. `quarantine` reports credentials
+`unsupported` (agentkeys has no freeze yet); `pause` leaves them alone. With nothing declared the layer is
+`unsupported`.
+
+## Gateway
+
+`agentgate` is not available yet: the gateway row is always `unsupported` unless an adapter is registered.
+
+## Degradation matrix and signatures
+
+An absent layer is `unsupported` (`partial-layer`); a layer that fails or does not answer makes the halt
+`incomplete`; `complete` needs every layer confirmed. Confirmations are Ed25519-signed with `ssh-keygen`; public
+keys are in `<home>/keys/published/`. Details: [M4 design](../design/m4-composed-executors.md).

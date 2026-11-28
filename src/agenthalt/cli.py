@@ -22,6 +22,7 @@ from agenthalt import __version__
 from agenthalt.config import Config, ConfigError, load_config
 from agenthalt.containment import Containment, Cut
 from agenthalt.coordinator import Coordinator
+from agenthalt.credentials import AgentkeysExecutor, parse_grant
 from agenthalt.doctor import Probes, format_checks, run_checks, verdict
 from agenthalt.egress import EgressExecutor
 from agenthalt.executors import ExecutorSigner, load_adapters
@@ -163,10 +164,12 @@ def build_parser() -> _Parser:
     p = add("run", usage="agenthalt run [--name NAME] [--user USER] -- <cmd> [args...]")
     p.add_argument("--name", type=_identifier("--name"), help="name for the enrolled run")
     p.add_argument("--user", help="run the agent as this separate OS user (needs sudo)")
+    p.add_argument("--grant", action="append", default=[], type=_grant, help=GRANT_HELP)
 
     p = add("attach")
     p.add_argument("--pid", type=_positive_int, required=True, help="process id to enroll")
     p.add_argument("--name", type=_identifier("--name"), help="name for the enrolled run")
+    p.add_argument("--grant", action="append", default=[], type=_grant, help=GRANT_HELP)
 
     _add_halt_arguments(add("halt"), with_mode=True)
     for mode in HALT_MODES:
@@ -331,12 +334,26 @@ def _store(config: Config) -> Store:
     return store
 
 
+GRANT_HELP = (
+    "a credential this agent holds, revoked by kill: agentkeys:session:<id>, "
+    "agentkeys:agent:<id>, or static:<name>[@YYYY-MM-DD] (listed as unrevocable); repeatable"
+)
+
+
+def _grant(value: str) -> str:
+    try:
+        return parse_grant(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+
+
 def _containment(config: Config) -> Containment:
     """The built-in executors, or registered ones. Under sudo only the cutting runs as root."""
     observer = SystemObserver()
     builtins = {
         "process-tree": lambda: ProcessExecutor(observer),
         "egress-fallback": lambda: EgressExecutor(observer),
+        "agentkeys": AgentkeysExecutor,
     }
     try:
         adapters = load_adapters(builtins)
@@ -396,6 +413,7 @@ def _halt(args: argparse.Namespace, config: Config) -> int:
                     "survivors": cut.survivors,
                     "lineage_verified": cut.lineage_verified,
                     "reason": cut.reason,
+                    "unrevocable_grants": cut.unrevocable,
                 },
                 sort_keys=True,
             )
@@ -436,6 +454,8 @@ def _print_cut(mode: Mode, cut: Cut, layers: dict[str, str]) -> None:
     for layer, status in layers.items():
         if layer not in ("runtime_choke", "process"):
             print(f"  {layer}: {status}" + (f" — {notes[layer]}" if layer in notes else ""))
+    for grant in cut.unrevocable:
+        print(f"    UNREVOCABLE {grant['ref']} — {grant['window_note']}")
 
 
 def _status(args: argparse.Namespace, config: Config) -> int:
@@ -535,7 +555,7 @@ def _supervisor(config: Config) -> Supervisor:
 
 def _run(args: argparse.Namespace, command: list[str], config: Config) -> int:
     try:
-        result = _supervisor(config).run(command, name=args.name, user=args.user)
+        result = _supervisor(config).run(command, name=args.name, user=args.user, grants=args.grant)
     except (EnrollmentError, ValueError) as exc:
         raise UsageError(f"agenthalt run: {exc}") from None
     print(
@@ -551,7 +571,7 @@ def _run(args: argparse.Namespace, command: list[str], config: Config) -> int:
 
 def _attach(args: argparse.Namespace, config: Config) -> int:
     try:
-        result = _supervisor(config).attach(args.pid, name=args.name)
+        result = _supervisor(config).attach(args.pid, name=args.name, grants=args.grant)
     except (EnrollmentError, ValueError) as exc:
         raise UsageError(f"agenthalt attach: {exc}") from None
     how = "enrolled" if result.created else "already enrolled"

@@ -100,6 +100,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 **✅ M1 — Halt store, dual choke & fail-closed.** Closed 2026-11-27.
 **✅ M2 — Lineage registry & subtree resolution.** Closed 2026-11-27.
 **✅ M3 — Process-tree containment (executor core).** Closed 2026-11-27, **with macOS CI open** (see checkpoint).
+**✅ M4 — Credential, gateway & sandbox executors.** Closed 2026-11-27, gateway and kernel integrations deferred (DD-57).
 
 ### Checkpoints
 
@@ -128,6 +129,12 @@ work item 2.7 (#569) and updated the affected issues in place.
   hangs on the runners, cause unknown ([diagnostic run 46106572250](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46106572250)). Review: 20 findings resolved
   ([log](codereview-log.md)), fixes not re-reviewed. Decisions added: DD-49..DD-53. macOS network cut moved to 0.3.0.
   Issues #436–#447 closed with evidence.
+- **2026-11-27 — M4 closed.** Directly on the integration branch. Gate: local macOS 623 passed, 5 skipped, coverage
+  98% (M4 modules 96% or higher), `ruff` zero, `mypy --strict` clean; Linux container as root and non-root pass; CI is
+  Linux only (#571). Review: 7 findings resolved ([log](codereview-log.md)), fixes not re-reviewed. Decisions added:
+  DD-54..DD-58. **Not delivered:** `agentgate` and `agentkernel` integrations (those projects do not exist yet).
+  Issues #448–#459 closed with evidence.
+
 
 ## PRD coverage matrix (every doc 00–40)
 
@@ -144,7 +151,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-53 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-58 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -233,7 +240,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-53 are honored across milestones; the twelve accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-58 are honored across milestones; the twelve accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
@@ -291,6 +298,11 @@ maps to the milestone(s) that implement it:
 | **DD-51** macOS network cut to 0.3.0 | M3, M9 | ADR-0012 |
 | **DD-52** `lift` releases what the halt cut | M3, M9 | — |
 | **DD-53** Re-raising cuts again | M3 | ADR-0003 |
+| **DD-54** Ed25519 confirmations | M4, M6 | ADR-0011 |
+| **DD-55** Published verification keys | M4, M13 | ADR-0011 |
+| **DD-56** agentkeys is self-attested | M4 | ADR-0003 |
+| **DD-57** Gateway and kernel deferred | M4 | — |
+| **DD-58** Declared credential inventory | M4 | — |
 
 ## Risks → milestone (PRD 08, RK-1..RK-25)
 

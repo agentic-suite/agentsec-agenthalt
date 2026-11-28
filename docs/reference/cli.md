@@ -23,8 +23,8 @@ Global options go **before** the command: `agenthalt --home /var/lib/agenthalt d
 | `doctor` | `--json`, `--verbose`, `--migrate` | **runs** — preflight checks and a verdict | M0 |
 | `journal show` | `--halt ID`, `--json` | **runs** — prints journal entries | M0 |
 | `journal verify` | — | **runs** — verifies the hash chain | M0 |
-| `run` | `--name NAME`, `--user USER` (needs sudo) `-- <cmd> [args…]` | **runs** — [enrolls](lineage.md) and supervises the command; returns the agent's own exit status; a refusal is exit 5 and nothing executes | M2 |
-| `attach` | `--pid PID` (required), `--name NAME` | **runs** — enrolls your own running process best-effort; prints `lineage_verified` | M2 |
+| `run` | `--name NAME`, `--user USER` (needs sudo), `--grant REF` (repeatable, [credentials](executors.md#credentials)) `-- <cmd> [args…]` | **runs** — [enrolls](lineage.md) and supervises the command; returns the agent's own exit status; a refusal is exit 5 and nothing executes | M2 |
+| `attach` | `--pid PID` (required), `--name NAME`, `--grant REF` | **runs** — enrolls your own running process best-effort; prints `lineage_verified` | M2 |
 | `halt` | one of `--agent/--session/--run/--all`; `--mode {pause,quarantine,kill}` (default `pause`); `--reason`; `--deadline-ms`; `--yes`; `--json` | **runs** — blocks at the [choke](choke.md), then [cuts the enrolled processes](executors.md); exit 2 (`partial-layer`) at best in this build, 1 if anything is unconfirmed, 3 if the block failed | M1, M3 (credentials M4) |
 | `pause` / `quarantine` / `kill` | as `halt`, mode fixed | as `halt` | M1, M3 |
 | `resume` | `--halt ID` | exits 5 | M9 |

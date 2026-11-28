@@ -20,7 +20,7 @@ from agenthalt.logs import get_logger
 
 __all__ = ["LAYERS", "CutLog", "CutWriter", "Record", "item_key"]
 
-LAYERS = ("process", "sandbox")
+LAYERS = ("process", "sandbox", "credentials", "gateway")
 _log = get_logger("cutlog")
 
 

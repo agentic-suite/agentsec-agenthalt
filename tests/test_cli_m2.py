@@ -136,3 +136,32 @@ def test_an_unreadable_lineage_is_reported_not_raised(
     (home / "journal" / "seg-000001.jsonl").write_text("garbage\n")
     code, lineage = status(capsys)
     assert code == 1 and lineage["tamper"]
+
+
+def test_grants_are_recorded_and_bad_ones_refused(capsys: pytest.CaptureFixture[str]) -> None:
+    code, _, err = cli(capsys, "run", "--grant", "token:x", "--", sys.executable, "-c", "pass")
+    assert code == 5 and "bad grant" in err
+    process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+    try:
+        code, _, _ = cli(
+            capsys,
+            "attach",
+            "--pid",
+            str(process.pid),
+            "--name",
+            "g",
+            "--grant",
+            "agentkeys:agent:g",
+            "--grant",
+            "static:K@2026-12-01",
+        )
+        assert code == 0
+        code, out, _ = cli(capsys, "kill", "--agent", "g", "--reason", "r", "--json")
+        data = json.loads(out)
+        assert data["unrevocable_grants"][0]["ref"] == "static:K"
+        assert data["layers"]["credentials"] in ("unsupported", "failed")
+        code, out, _ = cli(capsys, "kill", "--agent", "g", "--reason", "again")
+        assert "UNREVOCABLE static:K" in out
+    finally:
+        process.kill()
+        process.wait()

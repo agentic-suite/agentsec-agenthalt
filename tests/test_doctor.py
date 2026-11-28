@@ -50,6 +50,8 @@ def test_all_checks_present_and_healthy(tmp_path: Path) -> None:
         "lineage",
         "adapters",
         "egress",
+        "credentials",
+        "signing",
         "panic_key",
         "cgroup",
         "hooks",

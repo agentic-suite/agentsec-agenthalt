@@ -67,10 +67,10 @@ Each open decision names the milestone that must close it (from the WBS) and the
 | 7 | **agentgate co-shipping** — is `partial-layer` acceptable to partners? | Ship honest, don't wait (DD-18) | M12 — WBS 12.4 (partner eval) | owner | Adopted hypothesis |
 | 8 | **Stuck-loop triggers** | v0.3.0, after modes + RBAC are proven (DD-14) | v0.3.0 | eng | Deferred |
 | 9 | **Remote anchoring default** | Local anchor; RFC 3161 opt-in ([PRD 17](17-evidence-and-proof-format.md)) | M5 | security | Open |
-| 10 | **Verification-key publication** | The release attestation bundle | M4 (WBS 4.6), M13 | security | Open |
+| 10 | **Verification-key publication** | The release attestation bundle | M4 (WBS 4.6), M13 | security | Closed 2026-11-27 (DD-54, DD-55) |
 | 11 | **Enrollment mechanism** — supervisor vs attach semantics, macOS escape handling | `agenthalt run` / `attach` (DD-38, RK-23) | M0 (CLI), M2 — WBS 2.D0 / 2.7 (registry + supervisor) | eng | **Closed (M2): DD-38, DD-46** |
 | 12 | **Survivor-probe method per platform** | Liveness + egress observation; observer recorded in the receipt | M8 | eng | Open |
-| 13 | **Self-attestation key custody** — where the built-in executor key lives and how it rotates | Separate executor key, `attestation: self` (DD-40) | M4 | security | Open |
+| 13 | **Self-attestation key custody** — where the built-in executor key lives and how it rotates | Separate executor key, `attestation: self` (DD-40) | M4 | security | Closed 2026-11-27 (DD-54, DD-55) |
 | 14 | **Reference-hardware classes** | [PRD 39](39-performance-budget.md) table | M11 | release | Open |
 
 ## Method

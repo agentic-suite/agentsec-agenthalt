@@ -11,6 +11,7 @@ from __future__ import annotations
 import difflib
 import json
 import os
+import shutil
 import stat
 import sys
 from collections.abc import Callable
@@ -18,6 +19,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from agenthalt.config import CONFIG_ENV, ENV_NAMES, Config, ConfigError
+from agenthalt.credentials import AgentkeysExecutor
 from agenthalt.egress import EgressExecutor, unsupported_reason
 from agenthalt.executors import load_adapters
 from agenthalt.journal import Journal
@@ -258,12 +260,31 @@ def _adapters() -> Check:
             {
                 "process-tree": lambda: ProcessExecutor(observer),
                 "egress-fallback": lambda: EgressExecutor(observer),
+                "agentkeys": AgentkeysExecutor,
             }
         )
     except ConfigError as exc:
         return Check("adapters", "fail", str(exc), "remove or fix the broken executor package")
     listed = ", ".join(f"{layer}: {a.name}" for layer, a in sorted(found.items()))
     return Check("adapters", "pass", listed, "")
+
+
+def _credentials() -> Check:
+    if shutil.which("agentkeys") is None:
+        why = "agentkeys not installed: declared grants will be reported unsupported, not revoked"
+        return Check("credentials", "warn", why, "install agentkeys to revoke on kill")
+    return Check("credentials", "pass", "agentkeys found: kill revokes declared grants", "")
+
+
+def _signing() -> Check:
+    if shutil.which("ssh-keygen") is None:
+        return Check(
+            "signing",
+            "warn",
+            "no ssh-keygen: confirmations are HMAC-signed and only the key holder can check them",
+            "install OpenSSH (ssh-keygen) for Ed25519 signatures",
+        )
+    return Check("signing", "pass", "Ed25519 via ssh-keygen; public keys in keys/published/", "")
 
 
 def _egress(p: Probes) -> Check:
@@ -358,6 +379,8 @@ def run_checks(cfg: Config | ConfigError, probes: Probes) -> list[Check]:
         _lineage(cfg),
         _adapters(),
         _egress(probes),
+        _credentials(),
+        _signing(),
         _panic_key(probes),
         _cgroup(probes),
         _hooks(probes),

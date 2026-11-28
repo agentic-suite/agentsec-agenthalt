@@ -87,3 +87,8 @@ stated exception).
 | **DD-51** | **The macOS network cut moves to 0.3.0** (amends DD-45); Linux cuts with the iptables cgroup match | pf needs a dedicated user and root and was not verified; owner decision, 2026-11-27 |
 | **DD-52** | **`lift` releases what that halt cut**, except what another active halt covers | `resume` lands in M9; a frozen process with no way back is a trap |
 | **DD-53** | **Re-raising an active halt cuts again** under the same id (refines DD-27) | Returning an old success while the agent runs would be a false claim |
+| **DD-54** | **Confirmations are Ed25519 SSHSIG made with `ssh-keygen`**; HMAC only where `ssh-keygen` is missing (replaces DD-49's scheme) | Third-party verification needs public keys; the runtime stays dependency-free |
+| **DD-55** | **Verification keys are published as files** in `keys/published/<signer>.pub`, old keys kept | Closes open decisions #10 and #13; a release bundle ships them (M13) |
+| **DD-56** | **agentkeys results are `attestation: self`** | agentkeys does not sign its answers; claiming its signature would be false |
+| **DD-57** | **Gateway and kernel integrations wait for `agentgate` and `agentkernel`**; v0.1.0 ships the `unsupported` path (amends WBS 4.3, 4.4) | Neither project exists yet; owner decision, 2026-11-27 |
+| **DD-58** | **The credential inventory is declared at enrollment** (`--grant`) | agenthalt does not discover env-held keys; an undeclared inventory is `unsupported`, never a pass |
