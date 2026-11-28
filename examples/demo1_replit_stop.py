@@ -4,7 +4,10 @@ A "release-bot" enrolled with ``agenthalt run`` deletes records from a fake prod
 detached helper doing the same. One command stops both. Run it from the repository root:
 
     python examples/demo1_replit_stop.py            # macOS: freeze and kill
-    sudo python examples/demo1_replit_stop.py       # Linux: also cuts the run's network
+    systemd-run --user --scope -p Delegate=yes python examples/demo1_replit_stop.py   # Linux
+    sudo python examples/demo1_replit_stop.py       # Linux, as root: also cuts the run's network
+
+On Linux, ``agenthalt run`` refuses without a delegated cgroup; the demo then says why and exits 5.
 
 Everything lives in a temporary directory; nothing outside it is touched. The expected outcome in
 this version is ``partial-layer`` (exit 2): credentials and the gateway are not covered yet.
@@ -54,6 +57,7 @@ def main() -> int:
         def left() -> int:
             return len(list(store.iterdir()))
 
+        errors = root / "run.err"
         agent = subprocess.Popen(  # noqa: S603 - this interpreter, our own script
             [
                 *agenthalt,
@@ -66,14 +70,14 @@ def main() -> int:
                 str(store),
             ],
             env=env,
-            stderr=subprocess.DEVNULL,
+            stderr=errors.open("wb"),
         )
         try:
             end = time.monotonic() + 20
             while left() > RECORDS - 20:
                 if time.monotonic() > end or agent.poll() is not None:
-                    print("the demo agent did not start")
-                    return 1
+                    print(f"the demo agent did not start:\n{errors.read_text(errors='replace')}")
+                    return 5 if agent.poll() == 5 else 1
                 time.sleep(0.05)
             print(f"release-bot is deleting: {left()} of {RECORDS} records left. Halting it.")
             started = time.monotonic()

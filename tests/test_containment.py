@@ -530,4 +530,6 @@ def test_demo_1_runs(tmp_path: Path) -> None:
     done = subprocess.run(
         [PY, str(script)], capture_output=True, text=True, timeout=90, check=False
     )
+    if done.returncode == 5 and "cgroup" in done.stdout:
+        pytest.skip("agenthalt run is refused here: no delegated cgroup")
     assert done.returncode == 0 and "demo passed" in done.stdout, done.stdout + done.stderr
