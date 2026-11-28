@@ -22,7 +22,9 @@ def test_every_action_is_pinned_to_a_commit_sha() -> None:
 def test_matrix_covers_supported_pythons_and_platforms() -> None:
     for version in ("3.10", "3.11", "3.12", "3.13"):
         assert f'"{version}"' in CI
-    assert "ubuntu-latest" in CI and "macos-latest" in CI
+    assert "ubuntu-latest" in CI
+    # macOS is run locally until the runner hang is fixed; the workflow must say so
+    assert "macOS is off on CI" in CI
 
 
 def test_gate_steps() -> None:
