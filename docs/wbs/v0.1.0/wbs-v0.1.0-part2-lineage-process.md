@@ -44,11 +44,14 @@ about; a child spawned mid-halt is blocked by **scope inheritance** (the post-ha
 
 **Exit criteria**
 
-- [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
-- [ ] Subtree resolution walks the full lineage; process observation wins on conflict
-- [ ] Orphans are surfaced; a mid-halt spawn is choke-blocked by scope inheritance
-- [ ] Edge deletion/forgery is detected; the chain verifies
-- [ ] Agents enroll via `agenthalt run` / `attach`; a macOS process-group escape is a `lineage_gap` finding
+- [x] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+- [x] Subtree resolution walks the full lineage; process observation wins on conflict
+- [x] Orphans are surfaced; a mid-halt spawn is choke-blocked by scope inheritance
+- [x] Edge deletion/forgery is detected; the chain verifies
+- [x] Agents enroll via `agenthalt run` / `attach`; a macOS process-group escape is a `lineage_gap` finding
+
+**Docs (2.D):** [M2 design](../../design/m2-lineage-enrollment.md) · [lineage and enrollment](../../reference/lineage.md) ·
+[CLI reference](../../reference/cli.md) · [state layout](../../reference/state-layout.md) · [code review](codereview-log.md)
 
 ---
 
