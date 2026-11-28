@@ -87,3 +87,6 @@ agenthalt is the **stop primitive every other tool calls and no tool duplicates*
 budget-exhaustion trigger, agentkernel's kill triggers, and agentinbox's human halt all route through it
 (DD-33); agentdrill's field test gates its layer legs; agentcomply maps the receipt + journal to oversight
 controls (EU AI Act Art. 14's "stop button" evidence). One breaker box, five layers, every harness.
+
+**Network cut by platform (v0.1.0, DD-51):** Linux — built-in iptables cut for runs with their own cgroup, as
+root; macOS — `unsupported` without a composed sandbox layer (planned for 0.3.0).

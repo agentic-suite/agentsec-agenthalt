@@ -69,3 +69,6 @@ The tail check is constant-time: segment numbering has no gap, the last segment'
 and the last entry's hash recomputes. An unterminated, unparsable or edited tail makes `append()` refuse to
 write. The full-chain walk is `journal verify` (and `doctor`), not every append: re-verifying the whole history
 on each write would make the halt path's journal cost grow without bound (PRD 39: trigger + journal ≤ 50 ms).
+
+An `execute` entry written by a halt carries `payload.execution`: `confirmations`, `survivors`, `members`,
+`undo` (what `lift` reverses), `complete`, `lineage_verified`, `reason` and `outcome` ([executors](executors.md)).

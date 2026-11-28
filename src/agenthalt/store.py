@@ -16,6 +16,7 @@ import enum
 import fcntl
 import json
 import os
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
@@ -33,6 +34,7 @@ __all__ = [
     "HaltLifecycle",
     "HaltState",
     "Store",
+    "StoreBusyError",
     "StoreCorruptError",
     "StoreError",
     "StoreHealth",
@@ -45,6 +47,13 @@ SCHEMA = "agenthalt.store.v1"
 
 class StoreError(Exception):
     """Base class for store failures. Every one of them makes the choke fail closed."""
+
+
+LOCK_TIMEOUT_S = 2.0
+
+
+class StoreBusyError(StoreError):
+    """The lock stayed held."""
 
 
 class StoreUnavailableError(StoreError):
@@ -229,7 +238,17 @@ class Store:
         self._ensure_dirs()
         fd = os.open(self.dir / ".lock", os.O_CREAT | os.O_RDWR, 0o600)
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
+            deadline = time.monotonic() + LOCK_TIMEOUT_S
+            while True:  # never wait for ever: the holder may be the process we just froze
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        raise StoreBusyError(
+                            "locked by another process (frozen or hung?)"
+                        ) from None
+                    time.sleep(0.01)
             yield
         finally:
             fcntl.flock(fd, fcntl.LOCK_UN)

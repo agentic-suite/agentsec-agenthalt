@@ -46,6 +46,7 @@ __all__ = [
     "SpawnRefusedError",
     "Supervisor",
     "UserSpec",
+    "effective",
     "invoking_ids",
     "prepare_cgroup",
     "resolve_user",
@@ -148,7 +149,7 @@ def resolve_user(
 
 
 @contextlib.contextmanager
-def _effective(uid: int, gid: int) -> Iterator[None]:
+def effective(uid: int, gid: int) -> Iterator[None]:
     """Temporarily change effective ids (only a process started as root can)."""
     before = os.geteuid(), os.getegid()
     if (uid, gid) == before:
@@ -343,6 +344,8 @@ class Supervisor:
         if self.containment == "cgroup":
             group = prepare_cgroup(run_id, root=self.cgroup_root)
         try:
+            if spec is not None:
+                self._record_user(run_id, spec.uid)
             return self._launch(run_id, name, exe, command, spec, group)
         except (LineageError, JournalError, StoreError, OSError) as exc:
             raise EnrollmentError(f"enrollment failed, the command did not run: {exc}") from None
@@ -350,6 +353,20 @@ class Supervisor:
             if group is not None:
                 with contextlib.suppress(OSError):
                     group[0].rmdir()  # stays while the cgroup has members
+
+    def _record_user(self, run_id: str, uid: int) -> None:
+        """A root-owned note of the ``--user`` uid, which nothing running as the operator can
+        forge: it is what lets a ``sudo`` halt signal that user (and no other)."""
+        if os.geteuid() != 0:
+            return
+        directory = self.registry.home / "keys" / "users"
+        with effective(*invoking_ids()):
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd = os.open(directory / run_id, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        try:
+            os.write(fd, f"{run_id} {uid}".encode())
+        finally:
+            os.close(fd)
 
     def _launch(
         self,
@@ -381,7 +398,7 @@ class Supervisor:
         try:
             if group is not None:
                 (group[0] / "cgroup.procs").write_text(str(pid))
-            with _effective(*operator):
+            with effective(*operator):
                 meta = self._enroll(run_id, name, pid, spec, group)
                 os.setpgid(pid, pid)  # the child does the same; whichever is first wins
                 terminal.give(pid)  # before exec, so the agent never reads from the background
@@ -471,17 +488,29 @@ class Supervisor:
         watch = _Watch(self, run_id, meta)
 
         def forward(signum: int, frame: object = None) -> None:
-            with contextlib.suppress(OSError), _effective(*signal_as):
+            with contextlib.suppress(OSError), effective(*signal_as):
                 os.killpg(pid, signum)
 
         previous = {}
         with contextlib.suppress(ValueError):  # not the main thread: nothing to forward
             for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
                 previous[signum] = signal.signal(signum, forward)
+        frozen = False
         try:
             while True:
-                done, status = os.waitpid(pid, os.WNOHANG | os.WUNTRACED)
-                if done and os.WIFSTOPPED(status):
+                done, status = os.waitpid(pid, os.WNOHANG | os.WUNTRACED | os.WCONTINUED)
+                if done and os.WIFCONTINUED(status):
+                    if frozen:
+                        frozen = False
+                        terminal.give(pid)
+                elif done and os.WIFSTOPPED(status):
+                    if os.WSTOPSIG(status) == signal.SIGSTOP and not frozen:
+                        frozen = True
+                        terminal.take_back()
+                        print(
+                            f"agenthalt: {run_id} is frozen (see `agenthalt status`)",
+                            file=sys.stderr,
+                        )
                     if os.WSTOPSIG(status) == signal.SIGTSTP and terminal.interactive:
                         terminal.take_back()  # pragma: no cover - needs a job-control shell
                         os.kill(os.getpid(), signal.SIGSTOP)  # pragma: no cover
@@ -521,7 +550,7 @@ class Supervisor:
         if name is not None:
             validate_id(name, what="agent name")
         try:
-            with _effective(*invoking_ids()):
+            with effective(*invoking_ids()):
                 return self._attach(target, procs, name or f"pid-{pid}")
         except (LineageError, JournalError, StoreError, OSError) as exc:
             raise EnrollmentError(f"attach failed: {exc}") from None
@@ -639,7 +668,7 @@ class _Watch:
     def poll(self, observe_as: tuple[int, int] | None) -> set[int]:
         """Observe once, record what is new, and return the live member pids."""
         try:
-            with _effective(*(observe_as or (os.geteuid(), os.getegid()))):
+            with effective(*(observe_as or (os.geteuid(), os.getegid()))):
                 procs = self.sup.observer.snapshot(5.0)
                 markers = self.sup.observer.run_markers(5.0)
         except ObserveError as exc:

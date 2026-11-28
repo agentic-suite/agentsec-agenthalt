@@ -31,7 +31,7 @@ def test_kill_records_enforces_and_exits_incomplete(
     code, out, _ = run(capsys, "kill", "--agent", "bot", "--reason", "prod mutation")
     assert code == 1
     assert "enforced at the runtime choke" in out
-    assert "NOT done in this build" in out and "incomplete" in out
+    assert "unknown target" in out and "incomplete" in out  # nothing enrolled: nothing proven
     choke = RuntimeChoke(Store(tmp_path / ".agenthalt"), cache_ttl_s=0)
     d = choke.check(Target(agent="bot"))
     assert not d.allow and d.reason is ReasonCode.HALTED
@@ -47,7 +47,7 @@ def test_halt_json_and_scopes(tmp_path: Path, capsys: pytest.CaptureFixture[str]
         and data["outcome"] == "incomplete"
     )
     assert (
-        data["layers"]["runtime_choke"] == "enforced" and data["layers"]["process"] == "unsupported"
+        data["layers"]["runtime_choke"] == "enforced" and data["layers"]["process"] == "requested"
     )
     assert data["created"] is True
     code, out, _ = run(capsys, "pause", "--session", "s1", "--json")
@@ -62,7 +62,9 @@ def test_duplicate_halt_is_idempotent(capsys: pytest.CaptureFixture[str]) -> Non
 
 def test_fleet_halt_after_confirmation(capsys: pytest.CaptureFixture[str]) -> None:
     code, out, _ = run(capsys, "kill", "--all", "--reason", "key compromise", "--yes", "--json")
-    assert code == 1 and json.loads(out)["scope"] == "all"
+    data = json.loads(out)
+    # nothing is enrolled; the gateway and credential layers are still missing
+    assert code == 2 and data["scope"] == "all" and data["outcome"] == "partial-layer"
 
 
 def test_status_lists_halts_and_health(capsys: pytest.CaptureFixture[str]) -> None:

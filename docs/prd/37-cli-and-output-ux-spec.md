@@ -108,3 +108,5 @@ lands with the features.
   `--json` shapes.
 - No shell-integration magic beyond completions (bash/zsh/fish shipped) — the panic key is the one deliberate
   exception, and it is configuration, not a daemon (CUJ-12).
+
+**Until `resume` ships (M9), `agenthalt lift` releases what its halt froze or cut (DD-52).**

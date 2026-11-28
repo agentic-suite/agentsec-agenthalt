@@ -286,13 +286,13 @@ def test_under_sudo_state_is_written_as_the_invoking_user(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, action: str
 ) -> None:
     used: list[tuple[int, int]] = []
-    real = sup._effective
+    real = sup.effective
 
     def spy(uid: int, gid: int):  # type: ignore[no-untyped-def]
         used.append((uid, gid))
         return real(os.geteuid(), os.getegid())
 
-    monkeypatch.setattr(sup, "_effective", spy)
+    monkeypatch.setattr(sup, "effective", spy)
     monkeypatch.setattr(sup, "invoking_ids", lambda: (4242, 4243))
     runner = supervisor(tmp_path / "h")
     if action == "run":

@@ -120,3 +120,31 @@ def test_a_failing_ps_is_an_observe_error(
 
 def test_the_real_observer_sees_this_process() -> None:
     assert os.getpid() in SystemObserver().snapshot()
+
+
+def test_linux_probe_reads_only_the_asked_processes(tmp_path: Path) -> None:
+    (tmp_path / "10").mkdir()
+    (tmp_path / "10" / "stat").write_text("10 (x) T 1 10 10 " + "0 " * 15 + "77 0")
+    seen = SystemObserver(platform="linux", proc_root=tmp_path)
+    found = seen.probe([10, 11])
+    assert list(found) == [10] and found[10].state == "T"
+
+
+@pytest.mark.parametrize(("error", "empty"), [(ProcessLookupError, True), (PermissionError, False)])
+def test_macos_probe_failure_is_empty_only_if_none_exist(
+    monkeypatch: pytest.MonkeyPatch, error: type[OSError], empty: bool
+) -> None:
+    def fail(*args: object, **kwargs: object) -> None:
+        raise subprocess.CalledProcessError(1, "ps")
+
+    def kill(pid: int, signum: int) -> None:
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", fail)
+    monkeypatch.setattr(os, "kill", kill)
+    seen = SystemObserver(platform="darwin")
+    if empty:
+        assert seen.probe([10]) == {}
+    else:
+        with pytest.raises(ObserveError):
+            seen.probe([10])

@@ -49,6 +49,7 @@ def test_all_checks_present_and_healthy(tmp_path: Path) -> None:
         "store",
         "lineage",
         "adapters",
+        "egress",
         "panic_key",
         "cgroup",
         "hooks",
@@ -56,7 +57,8 @@ def test_all_checks_present_and_healthy(tmp_path: Path) -> None:
     assert (
         checks["store"].result == "warn" and "agenthalt status" in checks["store"].fix
     )  # not created yet
-    assert checks["adapters"].result == "n/a"
+    assert checks["adapters"].result == "pass"
+    assert checks["egress"].result == "n/a"  # no network cut on darwin in this version
     assert checks["cgroup"].result == "n/a"  # linux-only check on darwin
     assert verdict(list(checks.values())) == "warn"
 

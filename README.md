@@ -31,7 +31,7 @@ Planned behaviour, not shipped. A layer that isn't deployed is reported, never s
 | Stop the process subtree | built-in, self-attested | same | third-party attested |
 | Revoke credentials | `unsupported` | agentkeys-issued grants | same |
 | Cut the MCP gateway | `unsupported` | `unsupported` | yes |
-| Cut network egress | built-in fallback where privileged, else `unsupported` | same | yes |
+| Cut network egress | built-in fallback on Linux as root; macOS `unsupported` until 0.3.0 | same | yes |
 | Evidence snapshot | process tree, connections | + trace window | same |
 | 09:01 readout | survivors, siblings; the rest `unavailable` | + queued work, downstream, compensation | same |
 | Expected receipt status | `partial-layer` | `partial-layer` | `complete` possible |
@@ -89,10 +89,10 @@ graph**, not a process:
 ## Quickstart
 
 > **Planned interface (v0.1.0).** The commands below are the documented contract. In this development build
-> `doctor`, `journal`, `status`, `lift`, `run` and `attach` run, and `halt`/`pause`/`quarantine`/`kill` record a halt that the
-> runtime choke enforces — but processes are **not yet** suspended, revoked or killed (M3–M4), so a halt exits
-> `1` (`incomplete`) and points at the [manual fallback](docs/prd/28-failure-mode-runbook.md). The remaining
-> commands are reserved and exit `5`.
+> `doctor`, `journal`, `status`, `lift`, `run`, `attach` and `halt`/`pause`/`quarantine`/`kill` run: a halt
+> blocks at the runtime choke and [freezes or kills enrolled processes](docs/reference/executors.md); on Linux as
+> root it also cuts their network. Credentials and the gateway are not yet covered, so the best outcome is
+> `partial-layer` (exit 2). The remaining commands are reserved and exit `5`.
 
 ```sh
 pip install agentsec-agenthalt

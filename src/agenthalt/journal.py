@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import re
+import time
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -34,6 +35,7 @@ __all__ = [
     "GENESIS",
     "SCHEMA",
     "Journal",
+    "JournalBusyError",
     "JournalError",
     "VerifyResult",
     "canonical_hash",
@@ -75,6 +77,13 @@ _SEGMENT = re.compile(r"seg-(\d{6})\.jsonl")
 
 class JournalError(Exception):
     """An entry was refused, or the journal on disk is not an intact chain."""
+
+
+LOCK_TIMEOUT_S = 2.0
+
+
+class JournalBusyError(JournalError):
+    """The lock stayed held."""
 
 
 def _canonical(entry: dict[str, Any]) -> bytes:
@@ -291,7 +300,17 @@ class Journal:
         self._ensure_dirs()
         fd = os.open(self.dir / ".lock", os.O_CREAT | os.O_RDWR, 0o600)
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
+            deadline = time.monotonic() + LOCK_TIMEOUT_S
+            while True:  # never wait for ever: the holder may be the process we just froze
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    if time.monotonic() >= deadline:
+                        raise JournalBusyError(
+                            "locked by another process (frozen or hung?)"
+                        ) from None
+                    time.sleep(0.01)
             yield
         finally:
             fcntl.flock(fd, fcntl.LOCK_UN)

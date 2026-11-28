@@ -106,6 +106,52 @@ Format: `#<n> [<milestone> Review] <area> — <finding> → <resolution> (<commi
   `mypy --strict` clean. CI does not run the two Linux-root tests; the container run is their evidence.
 - **Resolution:** all findings resolved; no open findings.
 
+### M3 — Process-tree containment (3.CR, #446) — 2026-11-27
+
+- **Scope:** `executors`, `process_exec`, `egress`, `containment`, `coordinator`, `observe`, `cli`, `doctor`,
+  `supervisor`; independent read-only review against the [M3 design](../../design/m3-process-containment.md),
+  PRD 02/18/26/39, ADR-0003/0006/0011/0012. Regression tests: `tests/test_review_m3.py`.
+- **Findings:**
+  - #1 [M3 Review] process — a passed deadline returned without the undo record, leaving processes frozen for good
+    → write-ahead cut record (`cutlog`).
+  - #2 [M3 Review] containment — one late listing failure discarded the undo and skipped the kill → same record;
+    the later listings are isolated and terminate always runs.
+  - #3 [M3 Review] containment — a late child was reported frozen while running → late members are suspended,
+    `kill` rescans, any unconfirmed live member is a survivor.
+  - #4 [M3 Review] lift — overlapping halts could leave a process stopped with no halt active → records move to the
+    covering halt.
+  - #5 [M3 Review] lift — a lift racing a finishing halt released nothing → the record is read after removal.
+  - #6 [M3 Review] lift — a failed release could not be retried → it stays recorded; `lift` again retries.
+  - #7 [M3 Review] egress — `kill` restored the network although the member list was incomplete → requires complete.
+  - #8 [M3 Review] egress — `kill` forgot rules it failed to remove → kept and reported `failed`.
+  - #9 [M3 Review] egress — release deleted rules by line number and could delete someone else's → by rule, read back.
+  - #10 [M3 Review] locks — a member holding a state lock hung every halt → 2 s bound; processes cut even when the
+    block cannot be written (`failed`).
+  - #11 [M3 Review] safety — forged lineage under `sudo` could signal other users' processes → only the invoking uid
+    or a root-recorded `--user` uid.
+  - #12 [M3 Review] deadline — an abandoned phase changed things nothing recorded → write-ahead record; longer caps
+    for built-ins.
+  - #13 [M3 Review] lift — unreadable lineage released covered processes → they stay frozen.
+  - #14 [M3 Review] outcome — damaged lineage was not `incomplete` → it is.
+  - #15 [M3 Review] deadline — past the deadline no `SIGSTOP` was sent → always sent.
+  - #16 [M3 Review] process — a continued sibling was not stopped again → re-signalled.
+  - #17 [M3 Review] cgroup — a freeze could be left with no thaw recorded → recorded as its own item.
+  - #18 [M3 Review] safety — a halting process in a nested cgroup was not detected → checked by cgroup path.
+  - #19 [M3 Review] identity — Linux start times were built on `btime`, which moves with the clock → boot id.
+  - #20 [M3 Review] signing — a first-use race could leave an empty executor key → atomic create.
+- **Own findings before the review:** a journal failure after the block aborted the cut; a block failure exited 1
+  instead of 3; a broken third-party adapter stopped `halt` altogether; zero-member halts had no process row. All
+  fixed with tests. On a real kernel, `nft socket cgroupv2` was unavailable → `iptables` cgroup match (ADR-0012).
+- **Accepted, not changed (stated limits):** third-party adapters load before the block; `continued` reports the
+  signal, not an observation; a halt from inside the halted tree may not converge; resolve and listing timeouts sit
+  outside the deadline; without `--user` the agent can tamper with state while running; macOS has a small pid-reuse
+  window and no network cut.
+- **Not re-reviewed:** the fixes were verified by tests, not by a second independent review.
+- **Gates:** macOS (Python 3.12) 575 passed, 5 skipped, coverage 98%, M3 modules 95% or higher; Linux container as
+  root 576 passed, 4 skipped, including the real cgroup freeze/kill and `iptables` cut tests; ruff and
+  `mypy --strict` clean. CI skips the Linux-root tests; the container run is their evidence.
+- **Resolution:** all findings resolved or listed above as accepted.
+
 <!--
 ### M0 — Foundation, CLI & halt journal (0.CR)
 

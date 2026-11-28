@@ -18,8 +18,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from agenthalt.config import CONFIG_ENV, ENV_NAMES, Config, ConfigError
+from agenthalt.egress import EgressExecutor, unsupported_reason
+from agenthalt.executors import load_adapters
 from agenthalt.journal import Journal
 from agenthalt.lineage import LineageError, LineageRegistry
+from agenthalt.observe import SystemObserver
+from agenthalt.process_exec import ProcessExecutor
 
 __all__ = ["Check", "Probes", "format_checks", "run_checks", "verdict"]
 
@@ -247,6 +251,35 @@ def _lineage(cfg: Config | ConfigError) -> Check:
     return Check("lineage", "pass", f"intact: {len(read.edges)} edge(s)", "")
 
 
+def _adapters() -> Check:
+    observer = SystemObserver()
+    try:
+        found = load_adapters(
+            {
+                "process-tree": lambda: ProcessExecutor(observer),
+                "egress-fallback": lambda: EgressExecutor(observer),
+            }
+        )
+    except ConfigError as exc:
+        return Check("adapters", "fail", str(exc), "remove or fix the broken executor package")
+    listed = ", ".join(f"{layer}: {a.name}" for layer, a in sorted(found.items()))
+    return Check("adapters", "pass", listed, "")
+
+
+def _egress(p: Probes) -> Check:
+    why = unsupported_reason(platform=p.platform)
+    if why is None:
+        return Check("egress", "pass", "network cut available for runs with their own cgroup", "")
+    if p.platform != "linux":
+        return Check("egress", "n/a", why, "")
+    return Check(
+        "egress",
+        "warn",
+        f"{why}; quarantine and kill will report the network as uncut",
+        "run halts with sudo and install iptables",
+    )
+
+
 def _panic_key(p: Probes) -> Check:
     if p.platform != "darwin":
         return Check("panic_key", "n/a", "macOS-only check", "")
@@ -323,7 +356,8 @@ def run_checks(cfg: Config | ConfigError, probes: Probes) -> list[Check]:
         _journal(cfg),
         _store(cfg),
         _lineage(cfg),
-        Check("adapters", "n/a", "executor adapters land in M3-M4", ""),
+        _adapters(),
+        _egress(probes),
         _panic_key(probes),
         _cgroup(probes),
         _hooks(probes),

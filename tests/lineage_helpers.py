@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -50,6 +51,10 @@ class FakeObserver:
 
     def run_markers(self, timeout_s: float = 5.0) -> dict[int, str]:
         return dict(self.markers)
+
+    def probe(self, pids: Sequence[int], timeout_s: float = 5.0) -> dict[int, Proc]:
+        table = self.snapshot()
+        return {pid: table[pid] for pid in pids if pid in table}
 
     def cgroup_of(self, pid: int) -> str | None:
         return self.cgroups.get(pid)

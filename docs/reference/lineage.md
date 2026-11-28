@@ -1,7 +1,7 @@
 # Lineage and enrollment
 
 How a run enters agenthalt, how its descendants are tracked, and what is and is not guaranteed.
-Design: [M2](../design/m2-lineage-enrollment.md). **Nothing here suspends or kills anything** (M3).
+Design: [M2](../design/m2-lineage-enrollment.md). Suspending and killing are the [executors'](executors.md) job.
 
 ## Enrolling
 

@@ -17,6 +17,9 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
     seg-000001.jsonl        0600  hash-chained, authenticated records
     .lock                   0600  serialises lineage writers
   keys/lineage/             0700  one HMAC key per lineage adapter (M2)
+  keys/executor.key         0600  signs the built-in executors' confirmations (M3)
+  keys/users/<run id>       0644  root-owned note of a `run --user` uid (M3)
+  cuts/<halt id>.jsonl      0600  what each halt changed, written before it changes it (M3)
   halts/<halt_id>/                halt, subtree, stop plan, executions, confirmations (M3-M6)
   receipts/<halt_id>.json         proof-of-stop receipts, offline-verifiable (M6)
   evidence/<halt_id>/             redacted evidence snapshots (M5)
@@ -24,7 +27,7 @@ or `home` in `agenthalt.toml` ([configuration](configuration.md)).
   logs/                           structured logs, when log output goes to a file
 ```
 
-`journal/`, `store/`, `lineage/` and `keys/` exist in this build; the other directories are created by the milestone that owns them.
+`journal/`, `store/`, `lineage/`, `cuts/` and `keys/` exist in this build; the other directories are created by the milestone that owns them.
 
 ## Rules
 

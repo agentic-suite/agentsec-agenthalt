@@ -133,7 +133,7 @@ def test_fleet_halt_confirmed_is_recorded(
     monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr("builtins.input", lambda _prompt="": "halt all")
     code, out, _ = run(capsys, "kill", "--all", "--reason", "key compromise")
-    assert code == 1  # M1: recorded + enforced at the choke, layers not yet: incomplete
+    assert code == 2  # nothing enrolled; credentials and gateway are not composed
     assert "all · kill" in out
 
 
@@ -142,7 +142,7 @@ def test_valid_halt_is_recorded_with_manual_fallback(
     capsys: pytest.CaptureFixture[str], cmd: str
 ) -> None:
     code, out, _ = run(capsys, cmd, "--agent", "release-bot", "--reason", "prod mutation")
-    assert code == 1  # incomplete: enforced at the choke only (M1 design §7)
+    assert code == 1  # nothing enrolled under that name: nothing can be confirmed
     assert "enforced at the runtime choke" in out
     assert "28-failure-mode-runbook.md" in out  # the manual fallback pointer
 

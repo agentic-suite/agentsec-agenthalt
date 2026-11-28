@@ -73,3 +73,6 @@ The agent usually runs as the same OS user as agenthalt, so it *could* open the 
 not impossible: every change is committed to the hash-chained journal, so an out-of-band edit shows up as
 `head_mismatch`. Running an agent under a separate OS user with `agenthalt run --user` (opt-in, needs `sudo`, DD-46) removes the
 access. Without it, the store and the lineage keys stay readable by the agent: detectable, not prevented.
+
+Since M3 a halt also [cuts the enrolled processes](executors.md); the store is still written first. The store and
+journal locks are waited for at most 2 seconds ([executors](executors.md#if-a-state-file-is-locked)).

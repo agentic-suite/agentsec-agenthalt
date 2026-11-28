@@ -137,7 +137,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 | **PRD 08** | Risks (RK-1..RK-22) | cross-cutting; M11 |
 | **PRD 09** | Roadmap | M13 |
 | **PRD 10** | Feature parity (`ai-loopguard` absorption) | M11 (parity closure) |
-| **PRD 11** | Decisions DD-01..DD-48 | cross-cutting (honored every milestone) |
+| **PRD 11** | Decisions DD-01..DD-53 | cross-cutting (honored every milestone) |
 | **PRD 12** | Traceability (maintained) | every milestone |
 | **PRD 13** | Non-Functional Requirements | M0, M1, M11 |
 | **PRD 14** | Non-goals (scope guard) | every milestone |
@@ -226,7 +226,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 
 ## Decisions (PRD 11 / ADRs)
 
-DD-01..DD-48 are honored across milestones; the twelve accepted ADRs carry the *why* in depth. Every decision
+DD-01..DD-53 are honored across milestones; the twelve accepted ADRs carry the *why* in depth. Every decision
 maps to the milestone(s) that implement it:
 
 | Decision | Milestone(s) | ADR |
@@ -279,6 +279,11 @@ maps to the milestone(s) that implement it:
 | **DD-46** Opt-in separate agent user (`run --user`) | M2 | ADR-0009 |
 | **DD-47** `run` returns the agent's exit status | M2 | — |
 | **DD-48** Authenticated lineage, head checkpointed in the journal | M2 | ADR-0008 |
+| **DD-49** Provisional executor signing key | M3, M4 (4.6) | ADR-0011 |
+| **DD-50** Marker-only members are cut | M3 | ADR-0008 |
+| **DD-51** macOS network cut to 0.3.0 | M3, M9 | ADR-0012 |
+| **DD-52** `lift` releases what the halt cut | M3, M9 | — |
+| **DD-53** Re-raising cuts again | M3 | ADR-0003 |
 
 ## Risks → milestone (PRD 08, RK-1..RK-25)
 

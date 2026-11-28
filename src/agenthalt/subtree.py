@@ -309,8 +309,8 @@ class Resolver:
     actor: str = "agenthalt"
 
     def resolve(self, kind: str, value: str | None = None, *, deadline_ms: int = 5000) -> Subtree:
-        if kind not in ("run", "agent", "all"):
-            raise ValueError(f"cannot resolve a {kind!r} target (run, agent or all)")
+        if kind not in ("run", "agent", "session", "all"):
+            raise ValueError(f"cannot resolve a {kind!r} target (run, agent, session or all)")
         label = kind if value is None else f"{kind}:{value}"
         deadline = self.clock() + deadline_ms / 1000
 
@@ -325,6 +325,8 @@ class Resolver:
             roots = [value] if value is not None and value in graph else []
         elif kind == "agent":
             roots = [r for r in graph.enrolled() if graph.meta[r].get("name") == value]
+        elif kind == "session":
+            roots = [r for r in graph.meta if graph.meta[r].get("session") == value]
         else:
             roots = [*graph.enrolled(), *graph.orphans()]
         if not read.complete or expired():

@@ -33,7 +33,7 @@ def test_effective_ids_are_changed_and_restored(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(os, "getegid", lambda: 0)
     monkeypatch.setattr(os, "seteuid", lambda v: calls.append(("uid", v)))
     monkeypatch.setattr(os, "setegid", lambda v: calls.append(("gid", v)))
-    with pytest.raises(RuntimeError), sup._effective(7, 8):
+    with pytest.raises(RuntimeError), sup.effective(7, 8):
         raise RuntimeError
     assert calls == [("uid", 0), ("gid", 8), ("uid", 7), ("uid", 0), ("gid", 0), ("uid", 0)]
 

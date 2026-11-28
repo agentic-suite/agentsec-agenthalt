@@ -9,6 +9,7 @@ this build"); the halt family also points at the manual fallback, because the pe
 from __future__ import annotations
 
 import argparse
+import contextlib
 import getpass
 import json
 import os
@@ -19,17 +20,22 @@ from typing import Any, NoReturn
 
 from agenthalt import __version__
 from agenthalt.config import Config, ConfigError, load_config
+from agenthalt.containment import Containment, Cut
 from agenthalt.coordinator import Coordinator
 from agenthalt.doctor import Probes, format_checks, run_checks, verdict
+from agenthalt.egress import EgressExecutor
+from agenthalt.executors import ExecutorSigner, load_adapters
 from agenthalt.exit_codes import ExitCode, ReceiptStatus, exit_code_for
 from agenthalt.ids import validate_id
 from agenthalt.journal import Journal, JournalError
 from agenthalt.lineage import LineageError, LineageRegistry
 from agenthalt.logs import configure_logging, get_logger
+from agenthalt.observe import SystemObserver
+from agenthalt.process_exec import ProcessExecutor
 from agenthalt.scopes import Mode, Scope
 from agenthalt.store import Store, StoreError
 from agenthalt.subtree import Graph
-from agenthalt.supervisor import EnrollmentError, Supervisor
+from agenthalt.supervisor import EnrollmentError, Supervisor, effective, invoking_ids
 
 __all__ = ["COMMANDS", "main"]
 
@@ -59,7 +65,7 @@ class Command:
 COMMANDS: dict[str, Command] = {
     "run": Command("launch an agent under the enrollment supervisor", "M2"),
     "attach": Command("enroll an already-running agent (best-effort)", "M2"),
-    "halt": Command("raise a halt against a target", "M1 (choke); layers M3-M4"),
+    "halt": Command("raise a halt against a target", "M1, M3 (credentials M4)"),
     "pause": Command("halt in pause mode (freeze, resumable)", "M9"),
     "quarantine": Command("halt in quarantine mode (freeze + cut network)", "M9"),
     "kill": Command("halt in kill mode (terminate + revoke)", "M3-M4"),
@@ -325,13 +331,55 @@ def _store(config: Config) -> Store:
     return store
 
 
+def _containment(config: Config) -> Containment:
+    """The built-in executors, or registered ones. Under sudo only the cutting runs as root."""
+    observer = SystemObserver()
+    builtins = {
+        "process-tree": lambda: ProcessExecutor(observer),
+        "egress-fallback": lambda: EgressExecutor(observer),
+    }
+    try:
+        adapters = load_adapters(builtins)
+    except ConfigError as exc:
+        # a broken plugin must not stop the kill switch: say so, and cut with the built-ins
+        print(f"agenthalt: {exc} — using the built-in executors", file=sys.stderr)
+        adapters = load_adapters(builtins, entry_points=lambda: ())
+    root = os.geteuid() == 0
+    return Containment(
+        LineageRegistry(
+            config.home,
+            journal=Journal(config.home, segment_max_entries=config.segment_max_entries),
+            segment_max_entries=config.segment_max_entries,
+        ),
+        observer,
+        adapters,
+        signer=ExecutorSigner(config.home),
+        deadline_ms=config.deadline_ms,
+        invoking_uid=invoking_ids()[0],
+        elevate=(lambda: effective(0, 0)) if root else contextlib.nullcontext,
+        actor=_actor(),
+    )
+
+
 def _halt(args: argparse.Namespace, config: Config) -> int:
     mode = Mode.parse(args.command if args.command in HALT_MODES else args.mode)
     scope = _scope(args)
-    result = Coordinator(_store(config)).raise_halt(scope, mode, actor=_actor(), reason=args.reason)
-    # An idempotent re-raise returns the halt already in force;
-    # in M1 its outcome is still incomplete.
-    outcome = result.outcome or ReceiptStatus.INCOMPLETE
+    containment = _containment(config)
+    try:
+        with effective(*invoking_ids()):  # state is never written as root
+            result = Coordinator(_store(config), containment).raise_halt(
+                scope, mode, actor=_actor(), reason=args.reason
+            )
+    except (StoreError, JournalError, OSError) as exc:
+        print(
+            f"agenthalt: HALT FAILED — the block could not be established: {exc}\n"
+            f"  Stop the agent by hand now: {MANUAL_FALLBACK}.",
+            file=sys.stderr,
+        )
+        return int(ExitCode.FAILED)
+    outcome, cut = result.outcome or ReceiptStatus.INCOMPLETE, result.cut
+    if cut is None:  # pragma: no cover - executors were given
+        raise UsageError("agenthalt halt: no executors")
     if args.json:
         print(
             json.dumps(
@@ -342,30 +390,52 @@ def _halt(args: argparse.Namespace, config: Config) -> int:
                     "mode": result.halt.mode.label,
                     "status": result.halt.status.value,
                     "outcome": outcome.value,
-                    "layers": result.layers or None,
+                    "layers": result.layers,
+                    "members": cut.members,
+                    "confirmations": [c.to_dict() for c in cut.confirmations],
+                    "survivors": cut.survivors,
+                    "lineage_verified": cut.lineage_verified,
+                    "reason": cut.reason,
                 },
                 sort_keys=True,
             )
         )
         return int(exit_code_for(outcome))
-    if result.created:
-        print(
-            f"halt {result.halt.halt_id} recorded — {scope} · {mode.label}: "
-            "enforced at the runtime choke."
-        )
-    else:
-        print(
-            f"halt {result.halt.halt_id} is already active for {scope} · {mode.label} (idempotent)."
-        )
-    print(
-        "  NOT done in this build: process suspend/kill, credential revoke, gateway, "
-        "sandbox (M3-M4)."
-    )
-    print(
-        f"  outcome: {outcome.value} (exit {int(exit_code_for(outcome))}). To stop the agent now, "
-        f"use the manual fallback: {MANUAL_FALLBACK}."
-    )
+    state = "recorded" if result.created else "already active (idempotent: same halt), cut again"
+    blocked = result.layers.get("runtime_choke") == "enforced"
+    if not blocked:
+        state = "HALT FAILED — the block could not be established; processes were cut anyway"
+    print(f"halt {result.halt.halt_id} {state} — {scope} · {mode.label}")
+    _print_cut(mode, cut, result.layers)
+    if not blocked:
+        print(f"  undo with: agenthalt lift --halt {result.halt.halt_id} --reason …")
+    print(f"  outcome: {outcome.value} (exit {int(exit_code_for(outcome))})")
+    if outcome in (ReceiptStatus.INCOMPLETE, ReceiptStatus.FAILED):
+        print(f"  Do not assume the agent stopped. Manual fallback: {MANUAL_FALLBACK}.")
     return int(exit_code_for(outcome))
+
+
+def _print_cut(mode: Mode, cut: Cut, layers: dict[str, str]) -> None:
+    verb = "killed" if mode is Mode.KILL else "frozen"
+    stopped = len(cut.members) - len(cut.survivors)
+    if layers.get("runtime_choke") == "enforced":
+        print("  new actions: denied, enforced at the runtime choke")
+    else:
+        print("  new actions: NOT blocked")
+    print(f"  processes: {stopped} of {len(cut.members)} confirmed {verb}")
+    for survivor in cut.survivors:
+        print(f"    SURVIVOR pid {survivor['pid']} — {survivor['why']}")
+    if not cut.complete:
+        print(f"    the member list is incomplete: {cut.reason}")
+    if not cut.lineage_verified:
+        print("    lineage not verified: there may be processes this halt does not know about")
+    notes: dict[str, str] = {}
+    for item in cut.confirmations:
+        if item.layer != "process" and item.status != "confirmed":
+            notes[item.layer] = item.note
+    for layer, status in layers.items():
+        if layer not in ("runtime_choke", "process"):
+            print(f"  {layer}: {status}" + (f" — {notes[layer]}" if layer in notes else ""))
 
 
 def _status(args: argparse.Namespace, config: Config) -> int:
@@ -433,12 +503,30 @@ def _status(args: argparse.Namespace, config: Config) -> int:
 
 
 def _lift(args: argparse.Namespace, config: Config) -> int:
+    containment = _containment(config)
     try:
-        Coordinator(_store(config)).lift(args.halt, actor=_actor(), reason=args.reason)
+        with effective(*invoking_ids()):
+            result = Coordinator(_store(config), containment).lift(
+                args.halt, actor=_actor(), reason=args.reason
+            )
     except (LookupError, ValueError) as exc:
         raise UsageError(f"agenthalt lift: {exc}") from None
-    print(f"halt {args.halt} lifted (journaled).")
-    return int(ExitCode.COMPLETE)
+    except (StoreError, JournalError, OSError) as exc:
+        print(f"agenthalt: lift failed, nothing was changed: {exc}", file=sys.stderr)
+        return int(ExitCode.FAILED)
+    if result.retried:
+        print(f"halt {args.halt} was already lifted; releasing what was left.")
+    else:
+        print(f"halt {args.halt} lifted (journaled).")
+    failed = False
+    for item in result.released:
+        failed = failed or item.status == "failed"
+        print(f"  {item.target}: {'FAILED — ' if item.status == 'failed' else ''}{item.note}")
+    if failed:
+        print(
+            f"  Run `agenthalt lift --halt {args.halt}` again to retry (sudo if the halt used it)."
+        )
+    return int(ExitCode.INCOMPLETE if failed else ExitCode.COMPLETE)
 
 
 def _supervisor(config: Config) -> Supervisor:

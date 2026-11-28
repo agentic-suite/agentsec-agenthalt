@@ -41,6 +41,9 @@ fixed **now** so the store format and the journal vocabulary never break.
 
 ## What performs the network cut
 
+At v0.1.0 the built-in fallback cuts on **Linux only**; on macOS, without a composed sandbox layer, the network
+row is `unsupported` (DD-51; the pf cut is planned for 0.3.0).
+
 agentseatbelt or agentkernel where deployed; otherwise agenthalt's built-in egress fallback (DD-45, labelled
 `attestation: self`). Where the fallback lacks privileges or, on macOS, a dedicated OS user for the run, the
 network row reports `unsupported` and the receipt is `partial-layer`. The mode never reports a network cut it

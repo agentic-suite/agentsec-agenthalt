@@ -8,3 +8,4 @@
 - [Halt store](halt-store.md) — `agenthalt.store.v1`, health and the integrity signal
 - [Choke](choke.md) — the runtime/gateway check, decision rules, reason codes
 - [Lineage and enrollment](lineage.md) — `run`/`attach`, edges, findings, limits
+- [Executors and halting](executors.md) — what each mode cuts, reading the result, `lift`, privileges

@@ -12,7 +12,8 @@ import re
 import subprocess
 import sys
 import time
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
@@ -36,6 +37,8 @@ class Proc:
     uid: int
     start: str
     """Start time, digits only. Together with ``pid`` it identifies a process across pid reuse."""
+    state: str = field(default="", compare=False)
+    """Scheduler state letters; ``T`` or ``t`` means stopped. Not part of the identity."""
 
 
 def node_id(proc: Proc) -> str:
@@ -48,6 +51,18 @@ class Observer(Protocol):
     def run_markers(self, timeout_s: float = ...) -> dict[int, str]: ...
 
     def cgroup_of(self, pid: int) -> str | None: ...
+
+    def probe(self, pids: Sequence[int], timeout_s: float = ...) -> dict[int, Proc]: ...
+
+
+def _exists(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True
+    return True
 
 
 def parse_stat(text: str, uid: int, boot: int = 0) -> Proc | None:
@@ -63,6 +78,7 @@ def parse_stat(text: str, uid: int, boot: int = 0) -> Proc | None:
         sid=int(fields[3]),
         uid=uid,
         start=f"{boot}{int(fields[19]):012d}",  # ticks alone repeat after a reboot
+        state=fields[0],
     )
 
 
@@ -83,7 +99,7 @@ def parse_ps(output: str, sid_of: object = None) -> dict[int, Proc]:
             sid = int(getsid(pid))
         except OSError:
             sid = 0
-        table[pid] = Proc(pid, ppid, pgid, sid, uid, str(int(started)))
+        table[pid] = Proc(pid, ppid, pgid, sid, uid, str(int(started)), fields[4])
     return table
 
 
@@ -114,12 +130,12 @@ class SystemObserver:
             raise ObserveError(f"cannot list processes: {exc}") from None
 
     def _boot_time(self) -> int:
+        """A number fixed for this boot. Not ``btime``, which moves when the clock is stepped."""
         try:
-            text = (self.proc_root / "stat").read_text()
-        except OSError:
+            text = (self.proc_root / "sys" / "kernel" / "random" / "boot_id").read_text()
+            return int(text.strip().replace("-", "")[:8], 16)
+        except (OSError, ValueError):
             return 0
-        found = re.search(r"^btime (\d+)$", text, re.MULTILINE)
-        return int(found.group(1)) if found else 0
 
     def snapshot(self, timeout_s: float = 5.0) -> dict[int, Proc]:
         if self.platform != "linux":
@@ -138,6 +154,33 @@ class SystemObserver:
                 continue  # exited while we were looking
             if proc is not None:
                 table[proc.pid] = proc
+        return table
+
+    def probe(self, pids: Sequence[int], timeout_s: float = 5.0) -> dict[int, Proc]:
+        """The given processes only: the cheap identity check made just before a signal."""
+        if self.platform != "linux":
+            try:
+                listing = self._ps(
+                    ["-o", "pid=,ppid=,pgid=,uid=,stat=,lstart=", "-p", ",".join(map(str, pids))],
+                    timeout_s,
+                )
+            except ObserveError:
+                if any(_exists(pid) for pid in pids):
+                    raise
+                return {}  # ps exits non-zero when none of them exists
+            return parse_ps(listing)
+        boot = self._boot_time()
+        table: dict[int, Proc] = {}
+        for pid in pids:
+            path = self.proc_root / str(pid)
+            try:
+                proc = parse_stat(
+                    (path / "stat").read_text(errors="replace"), path.stat().st_uid, boot
+                )
+            except OSError:
+                continue
+            if proc is not None:
+                table[pid] = proc
         return table
 
     def run_markers(self, timeout_s: float = 5.0) -> dict[int, str]:

@@ -77,23 +77,25 @@ running agent. Fixes the **block-new-first ordering** and **per-target confirmat
 | 3.3 | Process executor — Linux | cgroup freeze + kill; process-group semantics | executor | same on Linux runner | #439 | CUJ-1 | R1, R2 |
 | 3.4 | Block-new-first sequencing | Choke write synchronous; suspend/kill fan out in parallel within deadline; on zero-hook harnesses the runtime choke is realised below the agent — scope-based suspension + egress block deny the next action (PRD 02 §Mechanisms, ADR-0002) | coordinator | ordering test; block precedes termination | #440 | — | R1 |
 | 3.5 | Per-target confirmations + deadline | Each target reports status; deadline miss ⇒ `requested`; never rounds up to a stop; confirmations are produced signable — the signing hook is defined here and the OS executor's cuts carry `attestation: self`; M3 tests sign with a test key until 4.6 lands the key model | confirmations | requested≠confirmed enforced | #441 | — | R1 |
-| 3.6 | Sandbox egress-block executor | agentseatbelt interface **plus the built-in fallback** (DD-45, ADR-0012): nftables by cgroup (Linux), pf by dedicated user (macOS); egress block + freeze; open connections fail on next send; `unsupported` when unprivileged or no dedicated user | executor | egress blocked; open socket fails next send; honest `unsupported`; operator's own network never blocked; `doctor` reports the fallback's privileges | #442 | CUJ-7 | R1 |
+| 3.6 | Sandbox egress-block executor | agentseatbelt interface **plus the built-in Linux fallback** (DD-45, DD-51, ADR-0012): iptables by cgroup; egress block; open connections fail on next send; `unsupported` when unprivileged or without its own cgroup. **macOS pf cut moved to 0.3.0** | executor | egress blocked; open socket fails next send; honest `unsupported`; operator's own network never blocked; `doctor` reports the fallback's privileges | #442 | CUJ-7 | R1 |
 | 3.T | Tests | Adapter contract/load, per-OS suspend/kill, ordering, confirmations/deadline, egress block (incl. `unsupported` paths), first end-to-end halt | tests | all new paths covered; coverage ≥ 95% | #443 | — | — |
 | 3.C | Coverage gate | Enforce coverage ≥ 95% on this milestone's modules | coverage report | ≥ 95%; no untested new path | #444 | — | — |
 | 3.L | Lint & type gate | `ruff` zero; `mypy --strict` clean | CI | zero violations | #445 | — | — |
 | 3.CR | Code review | Findings in [codereview-log.md](codereview-log.md), resolved | review log | no open findings | #446 | — | — |
-| 3.D | Docs | Executor adapter reference, per-OS suspend notes, block-new-first order | docs | docs updated + linked here | #447 | — | — |
+| 3.D | Docs | Executor adapter reference, per-OS suspend notes, block-new-first order | docs | [executors](../../reference/executors.md), [design](../../design/m3-process-containment.md) | #447 | — | — |
 | 3.CI | Commit & push | On the feature branch | git | pushed | — | — | — |
 | 3.W | Update WBS | Checkpoint appended to the index Progress | WBS | checkpoint recorded | — | — | — |
 
 **Exit criteria**
 
-- [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
-- [ ] One command suspends then kills the whole subtree on macOS **and** Linux
-- [ ] Block-new precedes termination; confirmations never round `requested` up to a stop
-- [ ] On a zero-hook fixture, suspension + egress block alone deny the next action (where the egress cut is
+- [x] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+- [x] One command suspends then kills the whole subtree on macOS **and** Linux (macOS: CI runners and dev host;
+  Linux: CI plus a privileged container for the cgroup and firewall paths)
+- [x] Block-new precedes termination; confirmations never round `requested` up to a stop
+- [x] On a zero-hook fixture, suspension + egress block alone deny the next action (where the egress cut is
   available; elsewhere it reports `unsupported` and the receipt is `partial-layer`)
-- [ ] Demo 1 (the Replit stop) is runnable on the process + sandbox layers
+- [x] Demo 1 (the Replit stop) is runnable on the process + sandbox layers
+  ([`examples/demo1_replit_stop.py`](../../../examples/demo1_replit_stop.py); sandbox is `unsupported` on macOS, DD-51)
 
 ---
 

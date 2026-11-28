@@ -35,3 +35,12 @@ The platform mechanisms are working hypotheses, to be verified in the M3 design 
 - **Defer `quarantine`** — rejected: the self-tamper triggers would need a new default and the ladder would lose
   its middle rung.
 - **Ship `quarantine` with the network cut always `unsupported`** — rejected: it would behave as `pause`.
+
+## Amendment (2026-11-27, M3 design, DD-51)
+
+Owner decision: **the macOS pf cut moves to 0.3.0.** v0.1.0 ships the Linux cut only; on macOS the network layer
+is `unsupported` and `quarantine` is a freeze.
+
+The Linux hypothesis was tested and changed: Docker Desktop's kernel is built without `nft_socket`, so the cut
+uses the iptables cgroup match (`iptables`/`ip6tables -m cgroup --path`) with `REJECT` (TCP reset), which was
+verified in a privileged container to refuse new connections and fail an open connection on its next send.
