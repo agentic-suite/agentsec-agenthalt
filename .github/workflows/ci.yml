@@ -40,7 +40,12 @@ jobs:
         run: mypy
 
       - name: Tests + coverage (>= 95%)
-        run: pytest --cov=agenthalt --cov-report=term-missing --cov-fail-under=95
+        # These tests freeze real processes, so a bug can hang instead of fail: name the test, dump the
+        # stacks after 60 s, and give up rather than burn runner minutes.
+        timeout-minutes: 8
+        run: >-
+          pytest -v -o faulthandler_timeout=60
+          --cov=agenthalt --cov-report=term-missing --cov-fail-under=95
 
   install-smoke:
     name: pip install smoke (fresh, no cache)
