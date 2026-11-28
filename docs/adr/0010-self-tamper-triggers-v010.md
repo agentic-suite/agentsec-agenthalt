@@ -41,3 +41,9 @@ states.
   evidence is preserved.
 - These triggers depend on the basic `quarantine` rung shipping at v0.1.0 (DD-13).
 - They need neither R18 authorization nor agentpolicy, so the v0.2.0 dependency chain is unchanged.
+
+## Amendment (2026-11-27, ADR-0012)
+
+The network cut behind the `quarantine` default is made by a composed sandbox layer or by the built-in fallback
+([ADR-0012](0012-built-in-egress-fallback.md)). Where neither can make it (including a default macOS setup), a
+tamper halt still blocks at the choke and suspends the subtree, and reports the network cut as `unsupported`.

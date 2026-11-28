@@ -38,3 +38,9 @@ Security) is deployed.
 - **Hook-based enrollment** — rejected: it breaks ADR-0005 on zero-hook harnesses.
 - **System-wide process scanning with heuristics** to guess which processes are agents — rejected: it guesses
   parentage, and the lineage model forbids guessing.
+
+## Amendment (2026-11-27, ADR-0012)
+
+On macOS the built-in egress cut ([ADR-0012](0012-built-in-egress-fallback.md)) filters by user, so it needs the
+enrolled run under a dedicated OS user. Whether the supervisor can launch a run that way is open, to be decided
+in the M2 design. Until then the cut reports `unsupported` on macOS.

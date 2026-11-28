@@ -28,3 +28,8 @@ executor. agenthalt would then be its own witness, and the receipt didn't say so
 - A Wave-0 receipt is honest about whose word each cut rests on; third-party attestation arrives with the
   composed layers without a schema change (an additive field, Tier-0 safe).
 - Self-attestation is accepted out loud as RK-25. The cross-layer contradiction check (PRD 30) still applies.
+
+## Amendment (2026-11-27, ADR-0012)
+
+The built-in egress fallback ([ADR-0012](0012-built-in-egress-fallback.md)) is covered by point 2: it signs with
+the separate executor key and its confirmations are labelled `attestation: self`.

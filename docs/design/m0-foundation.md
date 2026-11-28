@@ -190,7 +190,8 @@ Each check returns `pass`, `warn`, `fail` or `n/a` with a one-line fix. The verd
 | `hooks` | never fails; reports whether agenthalt hooks are present for detected harnesses (ADR-0005) | — |
 
 Platform checks are `warn`, not `fail`, in M0 because nothing in M0 depends on them; M2 (enrollment) and M7
-(panic key) promote them to `fail` for the features that need them. `doctor --migrate` is a stub that reports
+(panic key) promote them to `fail` for the features that need them. The egress-fallback privilege check (DD-45,
+ADR-0012) is not part of the M0 build; M3 adds it. `doctor --migrate` is a stub that reports
 "no migrations in this version". `doctor --json` emits the checks as a list.
 
 ## 8. Structured logging and redaction

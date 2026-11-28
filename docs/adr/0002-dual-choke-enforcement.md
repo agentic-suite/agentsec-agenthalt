@@ -32,3 +32,9 @@ the model can talk past is a suggestion with better branding."*
 - Two enforcement points to maintain and drill; the per-platform drill legs cover both.
 - Scope-based checking (not enumerated-id matching) makes the choke race-proof against post-halt spawns
   ([PRD 27](../prd/27-lineage-model.md)).
+
+## Amendment (2026-11-27, ADR-0012)
+
+Where no sandbox layer is deployed, the egress block this ADR relies on comes from agenthalt's built-in fallback
+([ADR-0012](0012-built-in-egress-fallback.md)). Where the fallback cannot cut safely, the layer is `unsupported`,
+and a direct provider route is named in `uncovered_routes`.

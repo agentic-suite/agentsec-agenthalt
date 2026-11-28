@@ -1,6 +1,6 @@
 # WBS v0.1.0 — Part 7: Field Tests & Release (M12–M13)
 
-**BLUF:** **M12** runs the **field tests** — the platform × harness × trigger × layer-set matrix, the five demos,
+**BLUF:** **M12** runs the **field tests** — the platform × harness × trigger × layer-set matrix, the four v0.1.0 demos,
 and the design-partner eval kit — and produces the **hand-maintained field-test report** (never overwritten by
 automation). **M13** is **release readiness**: the release gate checklist, the security audit, the docs/claims
 audit, the release artifacts (compatibility table, coverage matrix, measured drill numbers, SBOM, signed
@@ -15,7 +15,7 @@ release), the first-run evidence transcript, and the **`v0.1.0` tag**. Everythin
 ## Milestone M12 — Field tests
 
 **Goal:** exercise the composed stop on **real stacks** (not fixtures) across the platform × harness × trigger ×
-layer-set matrix, validate the five demos ([PRD 22](../../prd/22-demo-scenarios.md)), run the design-partner eval
+layer-set matrix, validate the four v0.1.0 demos ([PRD 22](../../prd/22-demo-scenarios.md)), run the design-partner eval
 kit ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)), and record per-case verdicts (P/F/D) in a
 **hand-maintained report** — the ecosystem's signature release gate.
 
@@ -30,9 +30,9 @@ kit ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)), and record per-
 | 12.D0 | **Field-test plan + matrix** | The platform × harness × trigger × layer-set matrix; per-case steps; P/F/D classes; evidence-capture rules | plan | matrix reviewed before running | #544 | — | — |
 | 12.1 | Test matrix definition | Name every case (supported + expected-degraded + not-supported), per platform/harness | matrix | matrix complete + honest | #545 | — | — |
 | 12.2 | Run the cases | Execute each case; capture receipt + drill + journal artifacts | run artifacts | each case has an artifact | #546 | — | — |
-| 12.3 | **Demo validation** | Run the five demos (Replit, hostile harness, identity, dead-man-ready, panic key) end-to-end | demo logs | all demos pass in ≤ their timing budget, with the receipt status predicted for the stack | #547 | — | — |
-| 12.4 | Design-partner eval kit validation | Run the one-week kit's 10 questions against a real stack; answers open decision #7 (is `partial-layer` without agentgate acceptable to partners?) | eval report | ≥1 partner eval completed | #548 | — | — |
-| 12.5 | **Field-test report** (hand-maintained) | Per-case verdicts (P/F/D), notes, found-issues table; **automation may never overwrite it** | report | report committed + hand-maintained | #549 | — | — |
+| 12.3 | **Demo validation** | Run the four v0.1.0 demos (Replit, hostile harness, identity, panic key) end-to-end; Demo 4 is v0.2.0 | demo logs | all demos pass in ≤ their timing budget, with the receipt status predicted for the stack | #547 | — | — |
+| 12.4 | Design-partner eval kit validation | A **non-author** runs the one-week kit's 10 questions against a real stack (gate item 15); answers open decision #7 (is `partial-layer` without agentgate acceptable to partners?) | eval report | ≥1 partner eval completed | #548 | — | — |
+| 12.5 | **Field-test report** (hand-maintained) | Written from the non-author's run (12.4): per-case verdicts (P/F/D), notes, found-issues table; **automation may never overwrite it** | report | report committed + hand-maintained | #549 | — | — |
 | 12.6 | Miss triage | Classify findings: blocker / defect / feature / out-of-scope ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)); revisits open decision #1 (lineage edge priority) with field data | triage log | every finding classified | #550 | — | — |
 | 12.T | Tests | Field cases re-expressed as regression tests where automatable | tests | automatable cases in the suite; coverage ≥ 95% | #551 | — | — |
 | 12.C | Coverage gate | Enforce coverage ≥ 95% (unchanged; field work adds no new untested path) | coverage report | ≥ 95% | #552 | — | — |
@@ -46,7 +46,7 @@ kit ([PRD 34](../../prd/34-design-partner-evaluation-guide.md)), and record per-
 
 - [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
 - [ ] Every supported matrix case passes on its platform/harness; not-supported rows are honest
-- [ ] The five demos pass; ≥1 design-partner eval completed
+- [ ] The four v0.1.0 demos pass; ≥1 design-partner eval completed by a non-author
 - [ ] The field-test report is committed and **hand-maintained** (no automation overwrite)
 
 ---
