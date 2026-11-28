@@ -99,7 +99,7 @@ work item 2.7 (#569) and updated the affected issues in place.
 **✅ M0 — Foundation, CLI & halt journal.** Closed 2026-11-27.
 **✅ M1 — Halt store, dual choke & fail-closed.** Closed 2026-11-27.
 **✅ M2 — Lineage registry & subtree resolution.** Closed 2026-11-27.
-**⬜ M3 — Process-tree containment (executor core).** Next.
+**✅ M3 — Process-tree containment (executor core).** Closed 2026-11-27, **with macOS CI open** (see checkpoint).
 
 ### Checkpoints
 
@@ -121,6 +121,13 @@ work item 2.7 (#569) and updated the affected issues in place.
   ([run 46101028681](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46101028681)). Review: 14 findings
   resolved ([log](codereview-log.md)). Decisions added: DD-46, DD-47, DD-48. Issues #424–#435 and #569 closed with
   evidence.
+- **2026-11-27 — M3 closed by owner decision, macOS CI open.** Commits `5e46066`, `a2ed767`, `621f7c2`, directly on
+  the integration branch. Gate: local macOS 575 passed, 5 skipped, coverage 98% (M3 modules 95% or higher), `ruff` zero,
+  `mypy --strict` clean; Linux container as root 576 passed, including real cgroup freeze/kill and the `iptables` cut;
+  Linux CI green on Python 3.10–3.13 + install smoke. **Not met:** the macOS CI jobs have not passed; the test step
+  hangs on the runners, cause unknown ([diagnostic run 46106572250](https://github.com/agentic-suite/agentsec-agenthalt/actions/runs/46106572250)). Review: 20 findings resolved
+  ([log](codereview-log.md)), fixes not re-reviewed. Decisions added: DD-49..DD-53. macOS network cut moved to 0.3.0.
+  Issues #436–#447 closed with evidence.
 
 ## PRD coverage matrix (every doc 00–40)
 

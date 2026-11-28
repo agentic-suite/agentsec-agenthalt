@@ -88,7 +88,8 @@ running agent. Fixes the **block-new-first ordering** and **per-target confirmat
 
 **Exit criteria**
 
-- [x] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+- [ ] Design docs first · all tests pass · coverage ≥ 95% · lint strict clean · docs updated · committed+pushed
+  (**open:** the macOS CI jobs hang; everything else is met, see the index checkpoint)
 - [x] One command suspends then kills the whole subtree on macOS **and** Linux (macOS: CI runners and dev host;
   Linux: CI plus a privileged container for the cgroup and firewall paths)
 - [x] Block-new precedes termination; confirmations never round `requested` up to a stop
